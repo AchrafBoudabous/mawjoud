@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: mawjoud-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: production
+      - key: APP_VERSION
+        value: 0.1.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: ALLOWED_ORIGIN_REGEX
+        sync: false
+      - key: CLIENT_IP_HEADER
+        value: cf-connecting-ip
+      - key: REPORT_FINGERPRINT_SECRET
+        generateValue: true

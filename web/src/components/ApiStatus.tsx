@@ -1,0 +1,110 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { getApiHealth, getDbHealth } from "@/lib/api";
+import { getDictionary } from "@/lib/i18n";
+
+type CheckState = "checking" | "ok" | "error";
+
+const dict = getDictionary();
+
+function StatusLine({
+  state,
+  okLabel,
+  errorLabel,
+}: {
+  state: CheckState;
+  okLabel: string;
+  errorLabel: string;
+}) {
+  const dotColor =
+    state === "ok"
+      ? "bg-brand-600"
+      : state === "error"
+        ? "bg-red-500"
+        : "bg-muted";
+
+  const label =
+    state === "checking"
+      ? dict.apiStatus.checking
+      : state === "ok"
+        ? okLabel
+        : errorLabel;
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-ink">
+      <span
+        aria-hidden="true"
+        className={`h-2.5 w-2.5 rounded-full ${dotColor}`}
+      />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+export function ApiStatus() {
+  const [apiState, setApiState] = useState<CheckState>("checking");
+  const [dbState, setDbState] = useState<CheckState>("checking");
+
+  const runChecks = useCallback(() => {
+    setApiState("checking");
+    setDbState("checking");
+
+    void Promise.allSettled([getApiHealth(), getDbHealth()]).then(
+      ([apiResult, dbResult]) => {
+        if (apiResult.status === "fulfilled") {
+          setApiState("ok");
+        } else {
+          console.error("API health check failed:", apiResult.reason);
+          setApiState("error");
+        }
+
+        if (dbResult.status === "fulfilled") {
+          setDbState("ok");
+        } else {
+          console.error("DB health check failed:", dbResult.reason);
+          setDbState("error");
+        }
+      }
+    );
+  }, []);
+
+  useEffect(() => {
+    runChecks();
+  }, [runChecks]);
+
+  const isChecking = apiState === "checking" || dbState === "checking";
+  const hasError = apiState === "error" || dbState === "error";
+
+  return (
+    <section className="rounded-lg border border-brand-50 bg-surface p-4 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold text-ink">
+        {dict.apiStatus.title}
+      </h2>
+      <div className="flex flex-col gap-2">
+        <StatusLine
+          state={apiState}
+          okLabel={dict.apiStatus.apiOk}
+          errorLabel={dict.apiStatus.apiError}
+        />
+        <StatusLine
+          state={dbState}
+          okLabel={dict.apiStatus.dbOk}
+          errorLabel={dict.apiStatus.dbError}
+        />
+      </div>
+      {isChecking && (
+        <p className="mt-3 text-xs text-muted">{dict.apiStatus.coldStart}</p>
+      )}
+      {hasError && !isChecking && (
+        <button
+          type="button"
+          onClick={runChecks}
+          className="mt-3 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+        >
+          {dict.apiStatus.retry}
+        </button>
+      )}
+    </section>
+  );
+}
