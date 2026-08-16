@@ -12,7 +12,7 @@ type PharmacyMapProps = {
   isVisible: boolean;
 };
 
-// #0f766e mirrors --color-brand-600 in web/src/app/globals.css — keep in sync.
+// #0f766e mirrors --color-brand-600 in frontend/src/app/globals.css — keep in sync.
 const BRAND_PIN_COLOR = "#0f766e";
 
 export function PharmacyMap({ pharmacies, selectedId, isVisible }: PharmacyMapProps) {

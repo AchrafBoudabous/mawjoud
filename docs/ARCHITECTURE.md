@@ -41,7 +41,7 @@ Mawjoud/
 ├── docs/
 │   ├── BRIEF.md                   # exists
 │   └── ARCHITECTURE.md            # this file
-├── api/                           # FastAPI service (Render root dir)
+├── backend/                       # FastAPI service (Render root dir)
 │   ├── .env.example
 │   ├── .python-version
 │   ├── requirements.txt
@@ -53,7 +53,7 @@ Mawjoud/
 │       └── routers/
 │           ├── __init__.py
 │           └── health.py
-└── web/                           # Next.js app (Vercel root dir)
+└── frontend/                       # Next.js app (Vercel root dir)
     ├── .env.example
     ├── package.json
     ├── tsconfig.json
@@ -78,8 +78,8 @@ Mawjoud/
                 └── index.ts
 ```
 
-Naming is fixed: `web/` and `api/`. Do not use `frontend/`/`backend/` —
-deployment configs below reference these exact paths.
+Naming is fixed: `frontend/` and `backend/` — deployment configs below
+reference these exact paths.
 
 ### Root `.gitignore`
 
@@ -121,7 +121,7 @@ Short and practical, not marketing copy. Sections:
    English).
 2. Stack list (copy from `docs/BRIEF.md`).
 3. Repo layout (the tree above, abbreviated).
-4. Local development — exact commands for `api/` and `web/`, including
+4. Local development — exact commands for `backend/` and `frontend/`, including
    creating `.env` from `.env.example`.
 5. Environment variables — pointer to section 5 of this document, not a
    duplicated list.
@@ -129,7 +129,7 @@ Short and practical, not marketing copy. Sections:
 7. A note that `docs/BRIEF.md` is the scope source of truth and
    `docs/ARCHITECTURE.md` is the per-step spec.
 
-## 2. Next.js app (`web/`)
+## 2. Next.js app (`frontend/`)
 
 ### Scaffold parameters
 
@@ -138,7 +138,7 @@ Generate with `create-next-app` using: TypeScript **yes**, ESLint
 **yes**, Turbopack **yes**, import alias `@/*` **yes**. Target Next.js
 15.x / React 19.x, Node 22.
 
-Add to `web/package.json`:
+Add to `frontend/package.json`:
 
 ```json
 "engines": { "node": ">=22.0.0" }
@@ -152,9 +152,9 @@ those arrive with the steps that use them.
 
 Use **Tailwind CSS v4 with CSS-first configuration**. That means:
 
-- `web/postcss.config.mjs` uses the `@tailwindcss/postcss` plugin only.
+- `frontend/postcss.config.mjs` uses the `@tailwindcss/postcss` plugin only.
 - There is **no** `tailwind.config.ts` / `tailwind.config.js` file.
-- `web/src/app/globals.css` starts with `@import "tailwindcss";` and
+- `frontend/src/app/globals.css` starts with `@import "tailwindcss";` and
   declares project design tokens in an `@theme` block.
 
 Design tokens to declare in `@theme` now, so later steps reuse them
@@ -187,7 +187,7 @@ component in this or any later step. All copy lives in a typed
 dictionary so a second locale (Tunisian Arabic) can be added in phase 2
 without touching components.
 
-`web/src/lib/i18n/fr.ts`:
+`frontend/src/lib/i18n/fr.ts`:
 
 ```ts
 export const fr = {
@@ -201,7 +201,7 @@ export const fr = {
 } as const;
 ```
 
-`web/src/lib/i18n/index.ts` exports:
+`frontend/src/lib/i18n/index.ts` exports:
 
 - `export const defaultLocale = "fr" as const;`
 - `export const locales = ["fr"] as const;`
@@ -231,7 +231,7 @@ Required exact strings (French):
 - `apiStatus.retry`: `Réessayer`
 - `apiStatus.coldStart`: `Le serveur gratuit peut mettre jusqu'à une minute à démarrer.`
 
-`web/src/app/layout.tsx` sets `<html lang="fr">` and exports `metadata`
+`frontend/src/app/layout.tsx` sets `<html lang="fr">` and exports `metadata`
 with `title: "Mawjoud — Disponibilité des médicaments"` and a French
 `description`.
 
@@ -291,9 +291,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 - Export the TypeScript types `HealthResponse` and `DbHealthResponse`
   mirroring the FastAPI response models in section 3.
 
-No other file in `web/` may hard-code the backend URL.
+No other file in `frontend/` may hard-code the backend URL.
 
-## 3. FastAPI app (`api/`)
+## 3. FastAPI app (`backend/`)
 
 ### Package layout & dependency management
 
@@ -302,13 +302,13 @@ routers without restructuring. Use **`requirements.txt`** (not Poetry /
 uv / pyproject) — it is what Render's Python runtime auto-detects with
 zero configuration.
 
-`api/.python-version`:
+`backend/.python-version`:
 
 ```
 3.12.7
 ```
 
-`api/requirements.txt` (pinned):
+`backend/requirements.txt` (pinned):
 
 ```
 fastapi==0.115.6
@@ -338,7 +338,7 @@ via a module-level `settings` object (or an `lru_cache`d
 | `app_version` | `str` | no | `"0.1.0"` |
 
 - Reads from environment variables (upper-cased field names) and, in
-  local dev, from `api/.env` via `model_config = SettingsConfigDict(env_file=".env", ...)`.
+  local dev, from `backend/.env` via `model_config = SettingsConfigDict(env_file=".env", ...)`.
 - `ALLOWED_ORIGINS` is supplied as a **comma-separated string** and
   parsed into a list (strip whitespace, drop empties, drop trailing
   slashes). Do not rely on pydantic's JSON-list parsing for this env var.
@@ -438,12 +438,12 @@ whatsoever** — there are no tables yet.
   `HTTPException(503, detail=…)` — if using `HTTPException`, note the
   body shape becomes `{"detail": …}`, so prefer `JSONResponse` to match
   the schema above exactly, and mirror that shape in
-  `web/src/lib/api.ts`.
+  `frontend/src/lib/api.ts`.
 
 ### Local run command
 
 ```
-uvicorn app.main:app --reload --port 8000     # run from api/
+uvicorn app.main:app --reload --port 8000     # run from backend/
 ```
 
 ## 4. Supabase connection
@@ -469,7 +469,7 @@ exists, it should implement against the spec, note the blocker, and stop
 | Key | Where it lives | Why |
 | --- | --- | --- |
 | `anon` public key | Browser (Next.js, `NEXT_PUBLIC_*`) only | Safe to expose; RLS is what protects data. |
-| `service_role` secret key | FastAPI on Render only | Bypasses RLS. Must never appear in `web/`, in any `NEXT_PUBLIC_*` var, or in a client bundle. |
+| `service_role` secret key | FastAPI on Render only | Bypasses RLS. Must never appear in `frontend/`, in any `NEXT_PUBLIC_*` var, or in a client bundle. |
 
 Any future code that puts the service role key in the frontend is a bug,
 regardless of what a later spec says.
@@ -479,7 +479,7 @@ regardless of what a later spec says.
 `@supabase/supabase-js` is **not** installed in step 1. The frontend
 makes no Supabase calls. `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` are nevertheless listed in
-`web/.env.example` and set in Vercel now, so step 2 (which reads
+`frontend/.env.example` and set in Vercel now, so step 2 (which reads
 pharmacy data and, later, subscribes to Realtime) needs no environment
 changes. Unused-at-runtime env vars are harmless; add a comment in
 `.env.example` saying they are reserved for step 2.
@@ -490,7 +490,7 @@ Real values are never committed. Only `.env.example` files are tracked;
 `.env` is gitignored (see section 1). `.env.example` files contain
 placeholder values and a one-line comment per variable.
 
-### `api/.env.example`
+### `backend/.env.example`
 
 | Variable | Required | Example / default | Notes |
 | --- | --- | --- | --- |
@@ -502,7 +502,7 @@ placeholder values and a one-line comment per variable.
 | `APP_VERSION` | no | `0.1.0` | Echoed by `/health`. |
 | `PORT` | no | — | Injected by Render; do not set locally. |
 
-### `web/.env.example`
+### `frontend/.env.example`
 
 | Variable | Required | Example / default | Notes |
 | --- | --- | --- | --- |
@@ -600,7 +600,7 @@ Local:
 3. `cd web && npm run dev`; `http://localhost:3000` renders the French
    landing page, the disclaimer is visible without scrolling on a 360px
    viewport, and `ApiStatus` shows both green lines.
-4. `npm run build` and `npm run lint` in `web/` both succeed with no
+4. `npm run build` and `npm run lint` in `frontend/` both succeed with no
    errors.
 
 Production:
@@ -653,11 +653,11 @@ in `CLAUDE.md`.
 Choices the brief left open, decided here and binding on later steps
 unless amended:
 
-1. `web/` + `api/` directory names; single repo; no JS workspace tooling.
+1. `frontend/` + `backend/` directory names; single repo; no JS workspace tooling.
 2. Tailwind v4 CSS-first config, no `tailwind.config.ts`; design tokens
    in `@theme` in `globals.css`.
 3. All user-visible copy in a typed dictionary under
-   `web/src/lib/i18n/`; French only for now; no locale routing yet.
+   `frontend/src/lib/i18n/`; French only for now; no locale routing yet.
 4. `requirements.txt` over Poetry/uv; Python 3.12.7.
 5. FastAPI route convention: `/health*` unprefixed, features under
    `/api/…`.
@@ -667,7 +667,7 @@ unless amended:
    `ALLOWED_ORIGIN_REGEX` for Vercel previews; `allow_credentials=False`.
 8. Render via `render.yaml` Blueprint; Vercel via dashboard Root
    Directory = `web`, no `vercel.json`.
-9. Frontend calls the backend only through `web/src/lib/api.ts`.
+9. Frontend calls the backend only through `frontend/src/lib/api.ts`.
 10. `Disclaimer.tsx` is the single canonical implementation of the
     community-data disclaimer.
 
@@ -702,12 +702,12 @@ Step 1 left this open (`@supabase/supabase-js` was "reserved for step 2").
 
 **Decision: the frontend does NOT talk to Supabase. All reads go
 `browser/Vercel → FastAPI → Supabase`, exactly like `/health/db` did.
-`@supabase/supabase-js` is still not installed in `web/`. The anon key
+`@supabase/supabase-js` is still not installed in `frontend/`. The anon key
 stays unused.**
 
 Why:
 
-1. **Consistency with step 1.** `web/src/lib/api.ts` is already "the
+1. **Consistency with step 1.** `frontend/src/lib/api.ts` is already "the
    single place that knows the backend". One data path is simpler to
    reason about than two, and step 1's CORS/allowlist work already
    covers it.
@@ -743,7 +743,7 @@ requires a browser↔Supabase websocket and cannot be proxied through
 FastAPI. When step 3 or 4 specs Realtime, that spec must decide whether
 to (a) install `@supabase/supabase-js` for the *realtime channel only*
 while all HTTP reads stay on FastAPI, or (b) drop Realtime for polling.
-Until then the anon key remains unused. Amend `web/.env.example`'s
+Until then the anon key remains unused. Amend `frontend/.env.example`'s
 comment from "reserved for step 2" to "reserved for a possible Realtime
 channel in a later step; unused today".
 
@@ -935,7 +935,7 @@ not typos. The stored values contain single apostrophes.)
 ### New files
 
 ```
-api/app/
+backend/app/
 ├── main.py                     # modified: include the new router
 ├── routers/
 │   └── pharmacies.py           # new
@@ -950,7 +950,7 @@ location once avoids a later refactor. A `services/` layer is *not*
 introduced — this endpoint is one query. Introduce it when step 3's
 search logic makes routers unwieldy.
 
-### `api/app/schemas/pharmacy.py`
+### `backend/app/schemas/pharmacy.py`
 
 ```python
 from uuid import UUID
@@ -1047,7 +1047,7 @@ get_supabase()
 - `detail` must never contain the service role key, a Supabase URL with
   credentials, or a stack trace.
 
-### `api/app/main.py` change
+### `backend/app/main.py` change
 
 Import `pharmacies` alongside `health` and add
 `app.include_router(pharmacies.router)`. Nothing else changes — CORS
@@ -1067,10 +1067,10 @@ have to be undone.
 `brand-600`. `ApiStatus` **stays on `/` for now** — step 1's production
 acceptance test depends on it; removing it is step 8 polish.
 
-### New/changed files in `web/`
+### New/changed files in `frontend/`
 
 ```
-web/src/
+frontend/src/
 ├── app/
 │   ├── page.tsx                        # modified: CTA link to /pharmacies
 │   ├── globals.css                     # modified: two Leaflet interop rules
@@ -1097,7 +1097,7 @@ client bundle. That is fine and intentional — they are pure
 presentational functions with no server-only imports. Do not add
 `"use client"` to them; do not try to keep them server-rendered.
 
-### `web/src/lib/api.ts` — modification
+### `frontend/src/lib/api.ts` — modification
 
 Extend `fetchJson` with an options argument so callers can opt into ISR
 instead of step 1's `no-store`. Step 1's two health functions keep their
@@ -1137,7 +1137,7 @@ export type PharmacyListResponse = { pharmacies: Pharmacy[]; count: number };
 
 No component may fetch the backend except through `api.ts`.
 
-### `web/src/lib/geo.ts`
+### `frontend/src/lib/geo.ts`
 
 ```ts
 export const BIZERTE_CENTER: [number, number] = [37.2744, 9.8739];
@@ -1150,7 +1150,7 @@ export const OSM_MAX_ZOOM = 19;
 Use the subdomain-less `tile.openstreetmap.org` host — the old
 `{s}.tile.openstreetmap.org` form is deprecated.
 
-### `web/src/lib/format.ts`
+### `frontend/src/lib/format.ts`
 
 ```ts
 export function formatPhone(phone: string): string
@@ -1160,7 +1160,7 @@ export function formatPhone(phone: string): string
 `^\+216\d{8}$`, return it unchanged rather than throwing.
 `tel:` hrefs use the raw unformatted value.
 
-### `web/src/app/pharmacies/page.tsx`
+### `frontend/src/app/pharmacies/page.tsx`
 
 Async Server Component.
 
@@ -1196,7 +1196,7 @@ The `try/catch` is required: without it a Render cold start during a
 Vercel build fails the build. With it, the build succeeds and ISR
 regenerates a good page within 300 s. (`error.tsx` boundaries are step 8.)
 
-### `web/src/app/pharmacies/loading.tsx`
+### `frontend/src/app/pharmacies/loading.tsx`
 
 Deliberately minimal — no skeletons, that is step 8. A centred
 `<p className="py-12 text-center text-muted">{dict.pharmacies.loading}</p>`
@@ -1288,7 +1288,7 @@ opening hours, stock.
 
 ## 2.7 Frontend: map view
 
-### Packages to install (in `web/`)
+### Packages to install (in `frontend/`)
 
 ```
 leaflet@1.9.4
@@ -1475,7 +1475,7 @@ does not already convey.
 ### Contingency
 
 If `next dev --turbopack` or `next build` fails to bundle
-`react-leaflet` v5 (ESM-only), add to `web/next.config.ts`:
+`react-leaflet` v5 (ESM-only), add to `frontend/next.config.ts`:
 
 ```ts
 transpilePackages: ["react-leaflet", "@react-leaflet/core"],
@@ -1494,7 +1494,7 @@ fights the calm/trustworthy design requirement. The badge earns its place
 in step 5, when pharmacist registration produces genuinely verified rows
 to contrast against.
 
-## 2.9 French copy — additions to `web/src/lib/i18n/fr.ts`
+## 2.9 French copy — additions to `frontend/src/lib/i18n/fr.ts`
 
 No user-visible string may be hard-coded in a component (step 1 rule,
 still binding).
@@ -1600,7 +1600,7 @@ Production:
   identical on purpose — there is nothing to differentiate them by yet.
 - **No reporting UI.** No "j'ai trouvé / pas trouvé" buttons. (Step 4.)
 - **No auth**, no `pharmacist_accounts`, no protected routes. (Step 5.)
-- **No `@supabase/supabase-js` in `web/`**, no Realtime, no anon-key
+- **No `@supabase/supabase-js` in `frontend/`**, no Realtime, no anon-key
   usage.
 - **No writes at all.** `GET` is the only method on the new endpoint; the
   frontend never POSTs.
@@ -1743,7 +1743,7 @@ adopted as "Realtime channel only, all HTTP reads still via FastAPI", and
 it needs its own RLS design section.
 
 **Consequence:** amend the comment on `NEXT_PUBLIC_SUPABASE_ANON_KEY` in
-`web/.env.example` from "reserved for a possible Realtime channel in a
+`frontend/.env.example` from "reserved for a possible Realtime channel in a
 later step" to: `# Unused. Realtime was declined in step 3 (see docs/ARCHITECTURE.md 3.0.1). Kept only so the value is already configured if that decision is ever reversed.`
 
 ### 3.0.2 `/pharmacies` survives step 3
@@ -2450,7 +2450,7 @@ on conflict (id) do update set
 ### New / changed files
 
 ```
-api/app/
+backend/app/
 ├── main.py                     # modified: include the medications router
 ├── routers/
 │   └── medications.py          # new — all three endpoints
@@ -2463,7 +2463,7 @@ Still no `services/` layer: the router holds one Supabase call per
 endpoint plus a sort. Introduce one in step 4 or 5 if that stops being
 true.
 
-### `api/app/schemas/medication.py`
+### `backend/app/schemas/medication.py`
 
 ```python
 from typing import Literal
@@ -2504,7 +2504,7 @@ class MedicationSearchResponse(BaseModel):
 deliberately **not** exposed — nothing in the UI uses them and aliases
 are internal search plumbing.
 
-### `api/app/schemas/stock.py`
+### `backend/app/schemas/stock.py`
 
 ```python
 from datetime import datetime
@@ -2744,7 +2744,7 @@ def _sort_key(row: PharmacyStock) -> tuple[int, float, str]:
   `is_active = false`.
 - **503**: `detail="stock information temporarily unavailable"`.
 
-### `api/app/main.py` change
+### `backend/app/main.py` change
 
 Import `medications` alongside `health` and `pharmacies`, and add
 `app.include_router(medications.router)`. Nothing else changes.
@@ -2776,7 +2776,7 @@ its own route preserves the test and cleans the home page. See 3.15.
 ### File inventory
 
 ```
-web/src/
+frontend/src/
 ├── app/
 │   ├── page.tsx                          # REWRITTEN — search home
 │   ├── globals.css                       # modified — stock status tokens
@@ -2817,7 +2817,7 @@ web/src/
 `dayjs`, `Intl.RelativeTimeFormat` are all unnecessary for four
 thresholds — see 3.12), no `@supabase/supabase-js`.
 
-### `web/src/lib/api.ts` — modifications
+### `frontend/src/lib/api.ts` — modifications
 
 1. **A typed error**, so callers can distinguish 404 from 503:
 
@@ -2944,7 +2944,7 @@ the brief's "calm, trustworthy, not flashy" requirement.
 label, so the four states are fully distinguishable without colour
 vision. There is no icon-only rendering anywhere.
 
-### `web/src/lib/stock.ts`
+### `frontend/src/lib/stock.ts`
 
 ```ts
 import type { StockStatusView } from "@/lib/api";
@@ -2970,7 +2970,7 @@ export const STOCK_STYLES: Record<StockStatusView, { badge: string; pin: string 
 export const STALE_AFTER_HOURS = 72;
 ```
 
-### `web/src/lib/medications.ts`
+### `frontend/src/lib/medications.ts`
 
 ```ts
 import type { MedicationCategory } from "@/lib/api";
@@ -3098,7 +3098,7 @@ Header: `dict.medications.trackedTitle` +
 
 ## 3.11 Results page and the map refactor
 
-### `web/src/app/medicaments/[slug]/page.tsx`
+### `frontend/src/app/medicaments/[slug]/page.tsx`
 
 Async Server Component.
 
@@ -3234,7 +3234,7 @@ colour and popup content would be the worst outcome. **Amendment to
 decision 2.12.11:** the Leaflet plumbing moves into a generic component
 and both features become thin adapters.
 
-`web/src/components/MapView.tsx` — `"use client"`, does nothing but
+`frontend/src/components/MapView.tsx` — `"use client"`, does nothing but
 
 ```tsx
 dynamic(() => import("./MapViewInner"), { ssr: false, loading: () => <MapPlaceholder /> })
@@ -3244,7 +3244,7 @@ and forward props. (The `dynamic(..., { ssr: false })` call must live in a
 client component — Next 15 throws at build time otherwise. That
 constraint is unchanged.)
 
-`web/src/components/MapViewInner.tsx` — `"use client"`, holds **every**
+`frontend/src/components/MapViewInner.tsx` — `"use client"`, holds **every**
 `leaflet` / `react-leaflet` import, `import "leaflet/dist/leaflet.css"`,
 and the `FlyToSelected` / `InvalidateSizeOnShow` helpers, ported verbatim
 from `PharmacyMapInner` (including the mount-time `invalidateSize()`).
@@ -3286,16 +3286,16 @@ CDN, no `_getIconUrl` hack. `bounds` framing, `scrollWheelZoom={false}`,
 `OSM_TILE_URL`, `OSM_MAX_ZOOM` and the mandatory OSM attribution are
 carried over unchanged.
 
-`web/src/components/PharmacyMap.tsx` — **rewritten** as an adapter with
+`frontend/src/components/PharmacyMap.tsx` — **rewritten** as an adapter with
 its **props and name unchanged**, so `PharmacyDirectory.tsx` is not
 touched at all. It maps `Pharmacy[]` → `MapMarker[]` with
 `color: "#0f766e"` (brand-600) and the step-2 popup (name / address /
 phone), and renders `<MapView … ariaLabel={dict.pharmacies.mapAriaLabel} />`.
 
-`web/src/components/PharmacyMapInner.tsx` — **deleted.** Nothing else
+`frontend/src/components/PharmacyMapInner.tsx` — **deleted.** Nothing else
 imports it.
 
-`web/src/components/StockMap.tsx` — the new adapter: maps
+`frontend/src/components/StockMap.tsx` — the new adapter: maps
 `PharmacyStock[]` → `MapMarker[]` with
 `color: STOCK_STYLES[p.status].pin` and a popup containing name,
 `<StockStatusBadge />`, `<StockReportTime />` (when a report exists),
@@ -3320,7 +3320,7 @@ it did before this refactor. It is an explicit acceptance check (3.16.14).
    already knows "now".
 3. Step 6's emails will need a different formatting of the same field.
 
-### `web/src/lib/format.ts` — additions
+### `frontend/src/lib/format.ts` — additions
 
 ```ts
 /** Tunisia is UTC+1 all year (no DST since 2009). Hard-coding the offset
@@ -3396,7 +3396,7 @@ anyway because it is one ternary and one dictionary key, and because
 conflating a patient's guess with a pharmacy's confirmation would
 misrepresent exactly the trust signal the whole product rests on.
 
-## 3.13 French copy — additions to `web/src/lib/i18n/fr.ts`
+## 3.13 French copy — additions to `frontend/src/lib/i18n/fr.ts`
 
 No user-visible string is hard-coded in a component (step 1 rule, still
 binding). Parameterised copy is a function (decision 2.12.12).
@@ -3514,7 +3514,7 @@ preamble.
 
 1. **`ApiStatus` moves off `/`.** Step 1 §2 put `<ApiStatus />` on the
    home page and step 2 §2.5 kept it there. It now lives on the new
-   `/statut` route (`web/src/app/statut/page.tsx`: header, `<Disclaimer />`,
+   `/statut` route (`frontend/src/app/statut/page.tsx`: header, `<Disclaimer />`,
    `<ApiStatus />`, `<SiteFooter />`, and
    `metadata.robots = { index: false }`). The component itself is
    unchanged.
@@ -3531,7 +3531,7 @@ preamble.
    `PharmacyMapInner.tsx` is deleted. The `ssr: false` split, the
    `divIcon` inline-SVG rule and the `invalidateSize` handling are
    unchanged in substance.
-5. **`web/.env.example`** comment for `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. **`frontend/.env.example`** comment for `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    updated per 3.0.1.
 6. **`pharmacies.subtitle`** updated per 3.13.
 7. **Step 2 open question "Should `/pharmacies` survive step 3?"**
@@ -3724,7 +3724,7 @@ Binding on later steps unless explicitly amended:
     `in_stock` → `unsure` → `none` → `out_of_stock`, freshest first
     within a group, then by name.
 13. **Status colours are `@theme` tokens (`--color-stock-*`) with a
-    literal `Record` of Tailwind classes in `web/src/lib/stock.ts`.**
+    literal `Record` of Tailwind classes in `frontend/src/lib/stock.ts`.**
     Colour is never the only signal; every state carries its French
     label.
 14. **Leaflet plumbing is generic** (`MapView` / `MapViewInner`, a
@@ -4014,7 +4014,7 @@ misconfigured deployment silently trusts whatever a client sends.
 Committed in `render.yaml` as a plain (non-secret) value, so production
 behaviour is in version control and reviewable.
 
-### `api/app/services/reporter_identity.py` (new)
+### `backend/app/services/reporter_identity.py` (new)
 
 ```python
 import hashlib
@@ -4083,7 +4083,7 @@ Notes:
 
 Without this, the only way to discover a wrong `CLIENT_IP_HEADER` is to
 notice that reporting is broken for everyone. Added to
-`api/app/routers/health.py` (the `/health*` family is unprefixed by
+`backend/app/routers/health.py` (the `/health*` family is unprefixed by
 step 1's convention).
 
 - **Request:** none. **Auth:** none.
@@ -4195,7 +4195,7 @@ accepted deliberately:
   constants in one module and are meant to be raised once real traffic
   exists. Flagged in 4.16.
 
-### `api/app/services/report_rate_limit.py` (new)
+### `backend/app/services/report_rate_limit.py` (new)
 
 ```python
 from dataclasses import dataclass
@@ -4250,13 +4250,13 @@ def check_report_rate_limit(
   index — a unique constraint here would be wrong, since repeated reports
   over time are the entire point of the table.
 
-### Introducing `api/app/services/` — decided here
+### Introducing `backend/app/services/` — decided here
 
 Steps 2 and 3 both asked the question and both answered "not yet". This
 step answers **yes**, with a narrow charter:
 
-> `api/app/services/` holds **pure logic with no I/O**. Supabase calls,
-> HTTP status codes and `HTTPException`s stay in `api/app/routers/`.
+> `backend/app/services/` holds **pure logic with no I/O**. Supabase calls,
+> HTTP status codes and `HTTPException`s stay in `backend/app/routers/`.
 
 Justification: `check_report_rate_limit` is the first piece of logic in
 the project with real branching, real constants worth tuning in one place,
@@ -4266,7 +4266,7 @@ noise inside a router. Endpoints that are "one query and a sort" keep
 living entirely in their router.
 
 ```
-api/app/services/
+backend/app/services/
 ├── __init__.py
 ├── reporter_identity.py     # 4.3
 └── report_rate_limit.py     # 4.4
@@ -4297,7 +4297,7 @@ Registered on the existing `medications` router
 the literal `/search` route must be declared before any `/{slug}`-shaped
 route in the file.
 
-### `api/app/schemas/stock.py` — additions
+### `backend/app/schemas/stock.py` — additions
 
 ```python
 from pydantic import BaseModel, ConfigDict
@@ -4487,7 +4487,7 @@ Rejected.
 
 **Therefore: the browser POSTs directly to FastAPI**, cross-origin,
 exactly as `ApiStatus` has done since step 1 — through
-`web/src/lib/api.ts`, which remains the sole fetch chokepoint.
+`frontend/src/lib/api.ts`, which remains the sole fetch chokepoint.
 
 ### The chosen mechanism, end to end
 
@@ -4502,7 +4502,7 @@ This is not a guess: the values are the ones the database wrote. Cost to
 other visitors: zero.
 
 **2. A `"use server"` action that purges the shared cache.**
-`web/src/lib/actions/stock.ts`:
+`frontend/src/lib/actions/stock.ts`:
 
 ```ts
 "use server";
@@ -4574,7 +4574,7 @@ nothing, and never touches the database or FastAPI. Accepted; noted in
 ## 4.7 Frontend — file inventory and `api.ts`
 
 ```
-web/src/
+frontend/src/
 ├── app/
 │   └── medicaments/[slug]/
 │       └── page.tsx                 # modified — summary/banner move into StockResults
@@ -4595,7 +4595,7 @@ web/src/
 **No new npm dependencies.** No toast library, no form library, no state
 manager. (Step 3's rule, still binding.)
 
-### `web/src/lib/api.ts` — modifications
+### `frontend/src/lib/api.ts` — modifications
 
 1. `FetchOptions` gains three fields:
 
@@ -4672,7 +4672,7 @@ explicit cold-start message instead (4.8).
 required by 4.6 and is consistent with `ApiStatus` since step 1. It is
 still the only way any component reaches the backend.
 
-### `web/src/lib/stock.ts` — additions
+### `frontend/src/lib/stock.ts` — additions
 
 ```ts
 import { ApiError } from "@/lib/api";
@@ -4911,7 +4911,7 @@ Two Leaflet notes for the developer:
   `<div onClick={(e) => e.stopPropagation()}>`. Do not add it
   pre-emptively.
 
-### `web/src/app/medicaments/[slug]/page.tsx` (modified)
+### `frontend/src/app/medicaments/[slug]/page.tsx` (modified)
 
 - Pass `medicationSlug={data.medication.slug}` to `<StockResults />`.
 - **Remove** the summary line and the zero-report banner from the page
@@ -4921,7 +4921,7 @@ Two Leaflet notes for the developer:
 - `export const revalidate = 60` is **unchanged**.
 - `<Disclaimer />` placement is unchanged and still required.
 
-## 4.9 French copy — `web/src/lib/i18n/fr.ts`
+## 4.9 French copy — `frontend/src/lib/i18n/fr.ts`
 
 New `report` namespace. No user-visible string is hard-coded in a
 component (step 1 rule); parameterised copy is a function (2.12.12).
@@ -4995,14 +4995,14 @@ this step is allowed to push it below the fold at 360 px.
 
 ## 4.11 Environment, config and deployment changes
 
-### `api/app/config.py` — two new fields
+### `backend/app/config.py` — two new fields
 
 | Field | Type | Required | Default | Notes |
 | --- | --- | --- | --- | --- |
 | `report_fingerprint_secret` | `str` | **yes** | — | `Field(min_length=32)`. Missing or short ⇒ the app must fail to boot (step 1's fail-fast rule). |
 | `client_ip_header` | `str \| None` | no | `None` | Lower-cased before use. Empty/unset ⇒ trust nothing but the socket (4.3). |
 
-### `api/.env.example` — two new rows
+### `backend/.env.example` — two new rows
 
 | Variable | Required | Example | Notes |
 | --- | --- | --- | --- |
@@ -5022,7 +5022,7 @@ this step is allowed to push it below the fold at 360 px.
 never exists in the repo, in a chat log or in anyone's clipboard. Nothing
 needs to read it back.
 
-`web/` needs **no new environment variables**.
+`frontend/` needs **no new environment variables**.
 
 ### `supabase/README.md`
 
@@ -5052,7 +5052,7 @@ preamble.
    `@supabase/supabase-js`, still no anon-key usage, still no websocket.
 2. **Step 1 non-goal "no API routes in Next.js" — clarified, not
    broken.** No `app/api/…` route handler is added. A `"use server"`
-   action module is added at `web/src/lib/actions/stock.ts`; it performs
+   action module is added at `frontend/src/lib/actions/stock.ts`; it performs
    cache invalidation only and never talks to FastAPI or Supabase.
 3. **§3.11 render order changed.** The summary line and the
    zero-report banner move from `medicaments/[slug]/page.tsx` into
@@ -5060,7 +5060,7 @@ preamble.
    On-screen order is unchanged.
 4. **`stock.reportingSoon` deleted** from the dictionary (4.9).
 5. **Steps 2/3's "no `services/` layer yet" answered:**
-   `api/app/services/` exists from this step, for pure logic only (4.4).
+   `backend/app/services/` exists from this step, for pure logic only (4.4).
 6. **§3.3's deferred columns delivered:** `reporter_fingerprint` +
    `stock_reports_fingerprint_recent` (4.2). The mirror index
    `(pharmacy_id, medication_id, reported_at desc)` is still deferred to
@@ -5236,7 +5236,7 @@ Binding on later steps unless explicitly amended:
    from the insert so the Postgres default fires.** Write schemas use
    `extra="forbid"` so an attempt to supply either is a 422, not a silent
    drop.
-8. **`api/app/services/` holds pure logic only.** All Supabase calls,
+8. **`backend/app/services/` holds pure logic only.** All Supabase calls,
    status codes and `HTTPException`s stay in routers.
 9. **Cache invalidation after a write is: optimistic patch from the
    response body + a `"use server"` action calling `revalidateTag` and
@@ -5387,7 +5387,7 @@ Real implementation cost, in order of severity:
 
 ### Decision
 
-**Option A. `@supabase/supabase-js` is installed in `web/` and used for
+**Option A. `@supabase/supabase-js` is installed in `frontend/` and used for
 authentication only.** The exact, testable boundary:
 
 > The browser may call `https://<project>.supabase.co/auth/v1/*`.
@@ -5395,7 +5395,7 @@ authentication only.** The exact, testable boundary:
 > or any PostgREST RPC. No component imports `supabase.from(...)`,
 > `supabase.rpc(...)`, `supabase.channel(...)` or `supabase.storage`.
 > Every byte of application data still arrives through
-> `web/src/lib/api.ts` → FastAPI → service role.
+> `frontend/src/lib/api.ts` → FastAPI → service role.
 
 `@supabase/ssr` is **not** installed: it exists to mirror the session
 into cookies for Server Components, and we deliberately keep the session
@@ -6092,7 +6092,7 @@ page de connexion&nbsp;:</p>
    same dependency step 6 has**; it is the strongest argument for buying
    the domain earlier than the brief assumes. Flagged in 5.22. Nothing in
    the repo changes: no `RESEND_API_KEY`, no `resend` package, no
-   templates in `web/` or `api/`.
+   templates in `frontend/` or `backend/`.
 6. **Project sign-ups stay enabled.** Registration relies on
    `shouldCreateUser: true` (5.13.2). Accepted risk and upgrade path:
    5.0 and 5.22.
@@ -6105,7 +6105,7 @@ page de connexion&nbsp;:</p>
 ### New / changed files
 
 ```
-api/app/
+backend/app/
 ├── main.py                     # modified: include the pharmacist router
 ├── config.py                   # modified: supabase_anon_key
 ├── dependencies.py             # new — FastAPI auth dependencies
@@ -6149,13 +6149,13 @@ today — noted in 5.22.
 requires. It is never used for a data call. This **amends step 1 §4**
 ("the backend never receives or uses the anon key").
 
-### 5.9.2 `api/app/config.py` — one new field
+### 5.9.2 `backend/app/config.py` — one new field
 
 | Field | Type | Required | Default | Notes |
 | --- | --- | --- | --- | --- |
 | `supabase_anon_key` | `str` | **yes** | — | Not secret (it ships in the browser bundle), but required: without it no pharmacist can authenticate, and a deploy that boots green while auth is impossible is worse than one that refuses to boot (step 1's fail-fast rule). |
 
-### 5.9.3 `api/app/dependencies.py`
+### 5.9.3 `backend/app/dependencies.py`
 
 ```python
 class PharmacistIdentity(BaseModel):
@@ -6226,7 +6226,7 @@ synchronous, so FastAPI runs them in the threadpool (step 2's rule).
 **Logging rule:** never log an access token, not even truncated. Log the
 account id and the status only.
 
-### 5.9.4 `api/app/services/phone.py`
+### 5.9.4 `backend/app/services/phone.py`
 
 ```python
 def normalise_tn_phone(raw: str) -> str | None:
@@ -6587,7 +6587,7 @@ step 3 and holds here.
 ### File inventory
 
 ```
-web/src/
+frontend/src/
 ├── app/
 │   ├── pharmacien/
 │   │   ├── layout.tsx                    # new — shell, notice, robots:noindex
@@ -6623,7 +6623,7 @@ web/src/
     └── i18n/fr.ts                        # modified — `pharmacist` namespace + additions
 ```
 
-### `web/src/lib/supabase/client.ts`
+### `frontend/src/lib/supabase/client.ts`
 
 ```ts
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -6667,7 +6667,7 @@ is written for `?code=` exchange. Implicit flow was considered and
 rejected — it returns tokens in the URL fragment, which leaks them into
 browser history and any client-side logger, and it is deprecated.
 
-### `web/src/lib/supabase/auth.ts` — the only module that touches the SDK
+### `frontend/src/lib/supabase/auth.ts` — the only module that touches the SDK
 
 Every other file talks to this one. That keeps the "auth surface only"
 invariant (5.0) enforceable by reading a single file.
@@ -6714,7 +6714,7 @@ error. **The login form must not surface it**: it always shows the same
 neutral "if an account exists, a link has been sent" message
 (5.13.1) — otherwise the form is an account-enumeration oracle.
 
-### `web/src/lib/api.ts` — modifications
+### `frontend/src/lib/api.ts` — modifications
 
 1. `FetchOptions` gains one field:
 
@@ -6808,7 +6808,7 @@ cold-start default (step 4's reasoning: a lost pharmacist toggle is worse
 than a slow one). `logMedicationView` uses 15 s because nothing waits on
 it and a hung request on a hot page is pure waste.
 
-### `web/src/lib/pharmacist.ts`
+### `frontend/src/lib/pharmacist.ts`
 
 ```ts
 import { ApiError } from "@/lib/api";
@@ -7156,7 +7156,7 @@ in the order **Disponible / En rupture / Incertain**.
 - Layout `grid grid-cols-3 gap-2`, each button `min-h-11` (≥ 44 px touch
   target), `text-sm font-medium`.
 - Selected button: filled with its status colour pair
-  (`STOCK_STYLES[status].badge` from `web/src/lib/stock.ts`, reused —
+  (`STOCK_STYLES[status].badge` from `frontend/src/lib/stock.ts`, reused —
   the dashboard and the patient page can therefore never disagree about
   what "Disponible" looks like) plus `ring-1 ring-current`.
 - Unselected: `border bg-surface text-muted`.
@@ -7207,7 +7207,7 @@ async function handleToggle(medication: DashboardMedication, status: StockStatus
   `Date.parse(local.reported_at) > Date.parse(server.reported_at ?? -∞)`,
   server wins on ties — **decision 4.15.10 reused unchanged**.
 - `revalidateMedicationStock` is step 4's existing
-  `web/src/lib/actions/stock.ts` server action, imported as-is. Without
+  `frontend/src/lib/actions/stock.ts` server action, imported as-is. Without
   it a pharmacist's toggle would not reach patients for up to 60 s of ISR
   — which is the entire point of the feature. Nothing new is written
   here; the mechanism from §4.6 simply gains a second caller.
@@ -7287,7 +7287,7 @@ Added to `app/medicaments/[slug]/page.tsx`. Notes:
 - It is the **only** reason this page makes a network call at all when
   served from the ISR cache; it is fire-and-forget and blocks nothing.
 
-## 5.16 French copy — `web/src/lib/i18n/fr.ts`
+## 5.16 French copy — `frontend/src/lib/i18n/fr.ts`
 
 No user-visible string is hard-coded in a component (step 1's rule);
 parameterised copy is a function (2.12.12); 0 and 1 take the singular.
@@ -7448,7 +7448,7 @@ Copy notes:
 
 ## 5.17 Environment, config and deployment changes
 
-### `api/requirements.txt` — one addition
+### `backend/requirements.txt` — one addition
 
 ```
 email-validator==2.2.0
@@ -7459,7 +7459,7 @@ transitive weight. Justified in 5.10.1. No other pip dependency: the JWT
 is verified over HTTP with the `httpx` already pinned since step 1, so
 there is **no** `pyjwt`, no `python-jose`, no `cryptography`.
 
-### `api/.env.example` — one new row
+### `backend/.env.example` — one new row
 
 | Variable | Required | Example | Notes |
 | --- | --- | --- | --- |
@@ -7472,7 +7472,7 @@ there is **no** `pyjwt`, no `python-jose`, no `cryptography`.
         sync: false
 ```
 
-### `web/.env.example` — comments only
+### `frontend/.env.example` — comments only
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` have been
 declared and set in Vercel since step 1 and unused ever since. They are
@@ -7514,7 +7514,7 @@ preamble.
    key" becomes: the backend holds `SUPABASE_ANON_KEY` and uses it solely
    as the `apikey` header on `/auth/v1/user` verification calls (5.9.1).
    The service-role key remains the only credential used for data. The
-   rule that the service-role key never appears in `web/` is unchanged
+   rule that the service-role key never appears in `frontend/` is unchanged
    and absolute.
 4. **Step 2 §2.2's `pharmacies.verified` comment amended.** Was: "True
    only once a human has confirmed the pharmacy exists and its details
@@ -7781,7 +7781,7 @@ Production:
 - **No `@supabase/ssr`, no auth cookies, no Next.js middleware, no
   server-side session, no server-side route protection** (5.12.2).
 - **No direct Supabase data access from the browser.** No `.from()`, no
-  `.rpc()`, no `.channel()`, no `.storage` anywhere in `web/` — and this
+  `.rpc()`, no `.channel()`, no `.storage` anywhere in `frontend/` — and this
   is the invariant most at risk now that the SDK is installed. Acceptance
   test 5.19-31.
 - **No RLS policies.** Not one, on any table, including the two new ones.
@@ -7809,12 +7809,12 @@ Binding on later steps unless explicitly amended:
 1. **The browser may call Supabase Auth (`/auth/v1/*`) and nothing
    else.** `@supabase/supabase-js` is installed for authentication only;
    `.from()`, `.rpc()`, `.channel()` and `.storage` are forbidden in
-   `web/`. Decision 2.12.1 is narrowed from "no Supabase" to "no Supabase
+   `frontend/`. Decision 2.12.1 is narrowed from "no Supabase" to "no Supabase
    **data**"; decision 2.12.2 (zero RLS policies, revoked from
    `anon`/`authenticated`) is unchanged and now covers two more tables.
 2. **All Supabase SDK usage is confined to
-   `web/src/lib/supabase/auth.ts`**, so the boundary in (1) is auditable
-   by reading one file. `web/src/lib/api.ts` remains the sole fetch
+   `frontend/src/lib/supabase/auth.ts`**, so the boundary in (1) is auditable
+   by reading one file. `frontend/src/lib/api.ts` remains the sole fetch
    chokepoint and never imports the SDK.
 3. **Sessions live in `localStorage`, never in cookies.** No
    `@supabase/ssr`, no middleware, no server-side session, no

@@ -24,13 +24,13 @@ Mawjoud/
 ├── docs/
 │   ├── BRIEF.md          # product scope, source of truth
 │   └── ARCHITECTURE.md   # per-step implementation spec
-├── api/                  # FastAPI service (Render root dir)
+├── backend/              # FastAPI service (Render root dir)
 │   └── app/
 │       ├── main.py
 │       ├── config.py
 │       ├── supabase_client.py
 │       └── routers/
-└── web/                   # Next.js app (Vercel root dir)
+└── frontend/               # Next.js app (Vercel root dir)
     └── src/
         ├── app/
         ├── components/
@@ -39,10 +39,10 @@ Mawjoud/
 
 ## Local development
 
-### API (`api/`)
+### API (`backend/`)
 
 ```
-cd api
+cd backend
 python -m venv .venv
 .venv\Scripts\activate        # Windows; use `source .venv/bin/activate` on macOS/Linux
 pip install -r requirements.txt
@@ -50,10 +50,10 @@ copy .env.example .env        # then fill in real values
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Web (`web/`)
+### Web (`frontend/`)
 
 ```
-cd web
+cd frontend
 npm install
 copy .env.example .env        # then fill in real values
 npm run dev
@@ -69,7 +69,7 @@ both apps, what they're for, and which are required.
 - **Render (API):** deploy via the `render.yaml` Blueprint at the repo
   root. See section 6a of `docs/ARCHITECTURE.md`.
 - **Vercel (Web):** import the repo in the Vercel dashboard with root
-  directory set to `web`. See section 6b of `docs/ARCHITECTURE.md`.
+  directory set to `frontend`. See section 6b of `docs/ARCHITECTURE.md`.
 
 ## Docs
 

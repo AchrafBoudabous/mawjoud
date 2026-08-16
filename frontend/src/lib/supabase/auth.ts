@@ -1,6 +1,6 @@
 /**
  * The ONLY module in this project that touches the Supabase SDK. Every
- * other file — including web/src/lib/api.ts, which remains the sole path
+ * other file — including frontend/src/lib/api.ts, which remains the sole path
  * to FastAPI — talks to this one. That keeps the "browser calls Supabase
  * Auth (/auth/v1/*) and nothing else" invariant enforceable by reading a
  * single file. See docs/ARCHITECTURE.md 5.0, 5.11, 5.21.2.

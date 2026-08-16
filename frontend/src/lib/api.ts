@@ -86,7 +86,7 @@ export class ApiError extends Error {
 export function getApiBaseUrl(): string {
   if (!API_BASE_URL) {
     throw new Error(
-      "NEXT_PUBLIC_API_BASE_URL is not set. Add it to web/.env (see web/.env.example)."
+      "NEXT_PUBLIC_API_BASE_URL is not set. Add it to frontend/.env (see frontend/.env.example)."
     );
   }
   return API_BASE_URL;

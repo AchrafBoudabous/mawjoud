@@ -235,7 +235,12 @@
       "Bash(tail -60 /tmp/uvicorn_step5.log | grep -i \"does not exist\\\\|PGRST\\\\|relation\")",
       "Bash(grep -i \"\\\\.env$\")",
       "Bash(git add *)",
-      "Bash(grep -iE \"\\\\.env$|secret|key|credential\")"
+      "Bash(grep -iE \"\\\\.env$|secret|key|credential\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git mv *)",
+      "Bash(git diff *)",
+      "Bash(grep -n \"web\\\\\\\\\\\\\\\\public\\\\|additionalDirectories\" .claude/settings.json)",
+      "Bash(.venv/Scripts/python -c \"from app.main import app; print\\('backend imports OK'\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\achra\\Documents\\Projects and scripts\\Mawjoud\\web\\public",
