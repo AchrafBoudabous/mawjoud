@@ -8,6 +8,7 @@ import { registerPharmacist } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
 import { classifyRegistrationError, type RegistrationErrorKind } from "@/lib/pharmacist";
 import { sendMagicLink } from "@/lib/supabase/auth";
+import { BUTTON_BASE, BUTTON_PRIMARY, FIELD } from "@/lib/ui";
 
 type PharmacistRegistrationFormProps = {
   pharmacies: Pharmacy[];
@@ -73,12 +74,12 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{dict.pharmacist.register.title}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{dict.pharmacist.register.title}</h1>
         <p className="mt-1 text-sm text-muted">{dict.pharmacist.register.intro}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="register-pharmacy" className="text-sm font-medium text-ink">
             {dict.pharmacist.register.pharmacyLabel}
           </label>
@@ -87,7 +88,7 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
             required
             value={pharmacyId}
             onChange={(e) => setPharmacyId(e.target.value)}
-            className="h-12 rounded-md border border-gray-200 px-3 text-base"
+            className={FIELD}
           >
             <option value="" disabled>
               {dict.pharmacist.register.pharmacyPlaceholder}
@@ -104,7 +105,7 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="register-name" className="text-sm font-medium text-ink">
             {dict.pharmacist.register.fullNameLabel}
           </label>
@@ -115,11 +116,11 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="h-12 rounded-md border border-gray-200 px-3 text-base"
+            className={FIELD}
           />
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="register-email" className="text-sm font-medium text-ink">
             {dict.pharmacist.register.emailLabel}
           </label>
@@ -131,11 +132,11 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-md border border-gray-200 px-3 text-base"
+            className={FIELD}
           />
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="register-phone" className="text-sm font-medium text-ink">
             {dict.pharmacist.register.phoneLabel}
           </label>
@@ -147,7 +148,7 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
             required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="h-12 rounded-md border border-gray-200 px-3 text-base"
+            className={FIELD}
           />
           <p className="text-xs text-muted">{dict.pharmacist.register.phoneHint}</p>
         </div>
@@ -171,7 +172,7 @@ export function PharmacistRegistrationForm({ pharmacies }: PharmacistRegistratio
         <button
           type="submit"
           disabled={phase === "submitting" || !pharmacyId}
-          className="min-h-11 rounded-md bg-brand-600 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${BUTTON_BASE} ${BUTTON_PRIMARY} w-full sm:w-auto`}
         >
           {phase === "submitting"
             ? dict.pharmacist.register.submitting

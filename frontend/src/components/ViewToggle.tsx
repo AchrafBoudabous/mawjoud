@@ -14,9 +14,9 @@ export function ViewToggle({ view, onChange, className }: ViewToggleProps) {
   const dict = getDictionary();
 
   const baseButton =
-    "flex-1 min-h-11 rounded-md px-3 py-2 text-sm font-medium transition-colors";
+    "flex-1 min-h-11 rounded-control px-3 py-2 text-sm font-medium transition-colors duration-150 ease-standard";
   const activeButton = "bg-brand-600 text-white";
-  const inactiveButton = "bg-surface text-ink border border-gray-200";
+  const inactiveButton = "bg-surface text-ink border border-line";
 
   return (
     <div

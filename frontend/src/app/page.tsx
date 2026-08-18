@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Disclaimer } from "@/components/Disclaimer";
 import { MedicationSearch } from "@/components/MedicationSearch";
+import { PageContainer } from "@/components/PageContainer";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import { TrackedMedications } from "@/components/TrackedMedications";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { BUTTON_BASE, BUTTON_SECONDARY } from "@/lib/ui";
 import { getMedications } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
 
@@ -18,14 +22,26 @@ export default async function Home() {
     medicationsContent = <TrackedMedications medications={data.medications} />;
   } catch (error) {
     console.error("Failed to load tracked medications:", error);
-    medicationsContent = <p className="text-sm text-muted">{dict.medications.loadError}</p>;
+    medicationsContent = (
+      <EmptyState
+        tone="warn"
+        role="alert"
+        icon="alert"
+        title={dict.medications.loadErrorTitle}
+        body={dict.medications.loadError}
+      />
+    );
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-screen-sm flex-col gap-6 px-4 py-8">
+    <PageContainer>
+      <SiteHeader />
+
       <header>
-        <h1 className="text-2xl font-bold text-ink">{dict.common.appName}</h1>
-        <p className="mt-1 text-muted">{dict.common.tagline}</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+          {dict.home.title}
+        </h1>
+        <p className="mt-2 text-base text-muted">{dict.common.tagline}</p>
       </header>
 
       <Disclaimer />
@@ -36,12 +52,12 @@ export default async function Home() {
 
       <Link
         href="/pharmacies"
-        className="inline-block text-sm text-brand-600 underline"
+        className={`${BUTTON_BASE} ${BUTTON_SECONDARY} w-full sm:w-auto`}
       >
         {dict.home.ctaPharmacies}
       </Link>
 
       <SiteFooter />
-    </div>
+    </PageContainer>
   );
 }

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ApiStatus } from "@/components/ApiStatus";
 import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { BackLink } from "@/components/ui/BackLink";
 import { getDictionary } from "@/lib/i18n";
 
 export const metadata: Metadata = {
@@ -15,12 +17,13 @@ export default function StatutPage() {
   const dict = getDictionary();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-screen-sm flex-col gap-6 px-4 py-8">
+    <PageContainer>
+      <SiteHeader />
+
       <header>
-        <Link href="/" className="text-sm text-brand-600 underline">
-          {dict.nav.home}
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-ink">{dict.apiStatus.title}</h1>
+        <BackLink href="/" label={dict.nav.home} />
+        <h1 className="mt-2 text-2xl font-semibold text-ink">{dict.apiStatus.title}</h1>
+        <p className="mt-1 text-base text-muted">{dict.apiStatus.subtitle}</p>
       </header>
 
       <Disclaimer />
@@ -28,6 +31,6 @@ export default function StatutPage() {
       <ApiStatus />
 
       <SiteFooter />
-    </div>
+    </PageContainer>
   );
 }

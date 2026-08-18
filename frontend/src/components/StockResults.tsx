@@ -6,6 +6,7 @@ import { StockMap } from "@/components/StockMap";
 import { StockPharmacyList } from "@/components/StockPharmacyList";
 import { REPORT_UI_IDLE } from "@/components/StockReportButtons";
 import type { ReportUiState } from "@/components/StockReportButtons";
+import { NoticeCard } from "@/components/ui/NoticeCard";
 import { ViewToggle } from "@/components/ViewToggle";
 import { revalidateMedicationStock } from "@/lib/actions/stock";
 import type { PatientReportStatus, PharmacyStock, ReportSource, StockStatus, StockSummary } from "@/lib/api";
@@ -101,24 +102,29 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
     setReportUi((s) => ({ ...s, [pharmacyId]: REPORT_UI_IDLE }));
   }
 
+  const hasReports = summary.in_stock + summary.out_of_stock + summary.unsure > 0;
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">{dict.stock.pharmacyCount(merged.length)}</p>
-
-      {summary.in_stock + summary.out_of_stock + summary.unsure === 0 ? (
-        <p className="font-medium text-ink">{dict.stock.noReportsAtAll}</p>
+      {hasReports ? (
+        <p className="text-sm text-ink tabular-nums">
+          {dict.stock.summary(summary.in_stock, merged.length)}
+        </p>
       ) : (
-        <p className="text-sm text-ink">{dict.stock.summary(summary.in_stock, merged.length)}</p>
+        <NoticeCard tone="info" icon="report" title={dict.stock.noReportsAtAll}>
+          {dict.stock.noReportsBody(merged.length)}
+        </NoticeCard>
       )}
 
-      <p className="text-sm text-muted">{dict.report.invite}</p>
-
       <ViewToggle view={view} onChange={setView} className="md:hidden" />
-      <StockLegend showVerified={merged.some((p) => p.verified)} />
+      <StockLegend
+        showVerified={merged.some((p) => p.verified)}
+        footerNote={hasReports ? dict.report.invite : undefined}
+      />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
         <div
-          className={`${view === "list" ? "block" : "hidden"} md:block md:w-2/5 md:max-h-[70vh] md:overflow-y-auto`}
+          className={`${view === "list" ? "block animate-fade-in" : "hidden"} md:block md:w-2/5 md:max-h-[70vh] md:overflow-y-auto`}
         >
           <StockPharmacyList
             pharmacies={merged}
@@ -131,7 +137,7 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
         </div>
 
         <div
-          className={`${view === "map" ? "block" : "hidden"} md:block md:w-3/5 md:sticky md:top-4`}
+          className={`${view === "map" ? "block animate-fade-in" : "hidden"} md:block md:w-3/5 md:sticky md:top-4`}
         >
           <StockMap
             pharmacies={merged}

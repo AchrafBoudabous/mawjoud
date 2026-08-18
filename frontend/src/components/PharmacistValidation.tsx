@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { completeMagicLinkSignIn } from "@/lib/supabase/auth";
 import { getDictionary } from "@/lib/i18n";
+import { BUTTON_QUIET } from "@/lib/ui";
 
 type Phase = "working" | "failed";
 
@@ -44,16 +45,21 @@ export function PharmacistValidation() {
   if (phase === "failed") {
     return (
       <div className="flex flex-col gap-3">
-        <h1 className="text-xl font-bold text-ink">{dict.pharmacist.validation.failedTitle}</h1>
+        <h1 className="text-xl font-semibold text-ink">{dict.pharmacist.validation.failedTitle}</h1>
         <p role="alert" className="text-sm text-warn-text">
           {dict.pharmacist.validation.failedBody}
         </p>
-        <Link href="/pharmacien/connexion" className="text-sm text-brand-600 underline">
+        <Link href="/pharmacien/connexion" className={BUTTON_QUIET}>
           {dict.pharmacist.validation.retry}
         </Link>
       </div>
     );
   }
 
-  return <p className="text-sm text-muted">{dict.pharmacist.validation.working}</p>;
+  return (
+    <div role="status" className="flex items-center justify-center gap-2 py-10">
+      <span aria-hidden className="size-2 animate-pulse-soft rounded-full bg-brand-600" />
+      <p className="text-sm text-muted">{dict.pharmacist.validation.working}</p>
+    </div>
+  );
 }

@@ -47,13 +47,21 @@ export function StockToggle({
               aria-pressed={isSelected}
               disabled={allDisabled}
               onClick={() => onSelect(value)}
-              className={`min-h-11 rounded-md border text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`min-h-11 rounded-control border px-1.5 text-center text-sm font-medium leading-tight disabled:cursor-not-allowed disabled:opacity-60 ${
                 isSelected
                   ? `ring-1 ring-current ${STOCK_STYLES[value].badge}`
-                  : "border-gray-200 bg-surface text-muted"
+                  : "border-line bg-surface text-muted"
               }`}
             >
-              {isPending ? dict.pharmacist.dashboard.saving : dict.stock.status[value]}
+              {isPending ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span aria-hidden className="size-1.5 animate-pulse-soft rounded-full bg-current" />
+                  <span className="opacity-70">{dict.stock.status[value]}</span>
+                  <span className="sr-only">{dict.pharmacist.dashboard.saving}</span>
+                </span>
+              ) : (
+                dict.stock.status[value]
+              )}
             </button>
           );
         })}

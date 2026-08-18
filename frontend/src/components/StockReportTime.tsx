@@ -36,7 +36,7 @@ export function StockReportTime({ iso, source }: StockReportTimeProps) {
           {sentence}
         </time>
       </p>
-      {stale && <p className="text-xs text-muted">{dict.stock.staleWarning}</p>}
+      {stale && <p className="mt-1 text-xs text-muted">{dict.stock.staleWarning}</p>}
     </div>
   );
 }

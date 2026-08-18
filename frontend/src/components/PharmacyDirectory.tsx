@@ -23,12 +23,14 @@ export function PharmacyDirectory({ pharmacies }: PharmacyDirectoryProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewToggle view={view} onChange={setView} className="md:hidden" />
-      <p className="text-sm text-muted">{dict.pharmacies.count(pharmacies.length)}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:flex-row">
+        <p className="text-sm text-muted tabular-nums">{dict.pharmacies.count(pharmacies.length)}</p>
+        <ViewToggle view={view} onChange={setView} className="w-full sm:w-auto md:hidden" />
+      </div>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
         <div
-          className={`${view === "list" ? "block" : "hidden"} md:block md:w-2/5 md:max-h-[70vh] md:overflow-y-auto`}
+          className={`${view === "list" ? "block animate-fade-in" : "hidden"} md:block md:w-2/5 md:max-h-[70vh] md:overflow-y-auto`}
         >
           <PharmacyList
             pharmacies={pharmacies}
@@ -38,7 +40,7 @@ export function PharmacyDirectory({ pharmacies }: PharmacyDirectoryProps) {
         </div>
 
         <div
-          className={`${view === "map" ? "block" : "hidden"} md:block md:w-3/5 md:sticky md:top-4`}
+          className={`${view === "map" ? "block animate-fade-in" : "hidden"} md:block md:w-3/5 md:sticky md:top-4`}
         >
           <PharmacyMap
             pharmacies={pharmacies}

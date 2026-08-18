@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { PharmacistRegistrationForm } from "@/components/PharmacistRegistrationForm";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { BUTTON_BASE, BUTTON_SECONDARY } from "@/lib/ui";
 import { getPharmacies } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
 
@@ -18,17 +20,18 @@ export default async function PharmacienInscriptionPage() {
   } catch (error) {
     console.error("Failed to load pharmacies for registration:", error);
     return (
-      <div>
-        <p role="alert" className="text-sm text-warn-text">
-          {dict.pharmacies.error}
-        </p>
-        <a
-          href="/pharmacien/inscription"
-          className="mt-2 inline-block text-sm text-brand-600 underline"
-        >
-          {dict.pharmacies.retry}
-        </a>
-      </div>
+      <EmptyState
+        tone="warn"
+        role="alert"
+        icon="alert"
+        title={dict.pharmacies.errorTitle}
+        body={dict.pharmacies.error}
+        action={
+          <a href="/pharmacien/inscription" className={`${BUTTON_BASE} ${BUTTON_SECONDARY}`}>
+            {dict.pharmacies.retry}
+          </a>
+        }
+      />
     );
   }
 }

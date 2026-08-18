@@ -6,9 +6,9 @@ import type { ReportUiState } from "@/components/StockReportButtons";
 import { REPORT_UI_IDLE, StockReportButtons } from "@/components/StockReportButtons";
 import { StockReportTime } from "@/components/StockReportTime";
 import { StockStatusBadge } from "@/components/StockStatusBadge";
+import { PhoneLink } from "@/components/ui/PhoneLink";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import type { PatientReportStatus, PharmacyStock } from "@/lib/api";
-import { formatPhone } from "@/lib/format";
 import { getDictionary } from "@/lib/i18n";
 import { STOCK_STYLES } from "@/lib/stock";
 
@@ -39,27 +39,19 @@ export function StockMap({
     lng: p.lng,
     color: STOCK_STYLES[p.status].pin,
     popup: (
-      <>
-        <strong>{p.name}</strong>
-        <br />
-        <StockStatusBadge status={p.status} />
-        {p.verified && (
-          <>
-            {" "}
-            <VerifiedBadge />
-          </>
-        )}
+      <div className="mawjoud-popup flex w-full flex-col gap-2">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-semibold text-ink">{p.name}</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StockStatusBadge status={p.status} />
+            {p.verified && <VerifiedBadge />}
+          </div>
+        </div>
         {p.status !== "none" && p.reported_at && (
           <StockReportTime iso={p.reported_at} source={p.reported_by} />
         )}
-        <br />
-        <span>{p.address}</span>
-        {p.phone && (
-          <>
-            <br />
-            <a href={`tel:${p.phone}`}>{formatPhone(p.phone)}</a>
-          </>
-        )}
+        <p className="text-xs text-muted">{p.address}</p>
+        <PhoneLink phone={p.phone} />
         <StockReportButtons
           pharmacyId={p.id}
           pharmacyName={p.name}
@@ -68,7 +60,7 @@ export function StockMap({
           onReset={onResetReport}
           layout="column"
         />
-      </>
+      </div>
     ),
   }));
 

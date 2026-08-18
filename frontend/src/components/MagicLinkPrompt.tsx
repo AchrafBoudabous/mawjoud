@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { sendMagicLink, verifyEmailCode } from "@/lib/supabase/auth";
 import { getDictionary } from "@/lib/i18n";
+import { BUTTON_BASE, BUTTON_PRIMARY, BUTTON_QUIET, CARD } from "@/lib/ui";
 
 type MagicLinkPromptProps = {
   email: string;
@@ -53,7 +54,7 @@ export function MagicLinkPrompt({ email, registered = false }: MagicLinkPromptPr
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-surface p-4">
+    <div className={`flex flex-col gap-4 ${CARD} p-4`}>
       <div>
         <h2 className="font-semibold text-ink">{dict.pharmacist.magicLink.sentTitle}</h2>
         <p className="mt-1 text-sm text-muted">{dict.pharmacist.magicLink.sentBody(email)}</p>
@@ -62,7 +63,7 @@ export function MagicLinkPrompt({ email, registered = false }: MagicLinkPromptPr
 
       <p
         role="note"
-        className="rounded-md border border-warn-border bg-warn-bg px-3 py-2 text-sm text-warn-text"
+        className="rounded-field border border-warn-border/70 bg-warn-bg px-3 py-2 text-sm text-warn-text"
       >
         {dict.pharmacist.magicLink.sameDeviceWarning}
       </p>
@@ -84,7 +85,7 @@ export function MagicLinkPrompt({ email, registered = false }: MagicLinkPromptPr
             setCode(e.target.value.replace(/[^0-9]/g, ""));
             if (codePhase === "error") setCodePhase("idle");
           }}
-          className="h-12 rounded-md border border-gray-200 px-3 text-base tracking-widest"
+          className="h-12 max-w-48 rounded-field border border-line bg-surface text-center text-lg tracking-[0.4em] tabular-nums"
         />
         {codePhase === "error" && (
           <p role="alert" className="text-sm text-stock-out">
@@ -94,7 +95,7 @@ export function MagicLinkPrompt({ email, registered = false }: MagicLinkPromptPr
         <button
           type="submit"
           disabled={codePhase === "checking" || code.length !== 6}
-          className="min-h-11 rounded-md bg-brand-600 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${BUTTON_BASE} ${BUTTON_PRIMARY} w-full sm:w-auto`}
         >
           {codePhase === "checking"
             ? dict.pharmacist.magicLink.codeChecking
@@ -103,16 +104,12 @@ export function MagicLinkPrompt({ email, registered = false }: MagicLinkPromptPr
       </form>
 
       <div>
-        <button
-          type="button"
-          onClick={handleResend}
-          className="text-sm text-brand-600 underline"
-        >
+        <button type="button" onClick={handleResend} className={BUTTON_QUIET}>
           {dict.pharmacist.magicLink.resend}
         </button>
         {resent && (
           <p role="status" className="mt-1 text-xs text-muted">
-            {dict.pharmacist.magicLink.sentTitle}
+            {dict.pharmacist.magicLink.resent}
           </p>
         )}
       </div>

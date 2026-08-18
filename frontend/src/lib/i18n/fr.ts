@@ -3,18 +3,26 @@ export const fr = {
     appName: "Mawjoud",
     tagline:
       "Vérifiez la disponibilité de vos médicaments dans les pharmacies de Bizerte.",
+    // "Appelez la pharmacie…" is split out so it can be emphasised (8.13).
+    // Concatenated, the two are byte-identical to the previous single string.
     disclaimer:
-      "Informations signalées par la communauté — il ne s'agit pas d'un flux de stock officiel ni garanti. Appelez la pharmacie avant de vous déplacer.",
+      "Informations signalées par la communauté — il ne s'agit pas d'un flux de stock officiel ni garanti.",
+    disclaimerAction: "Appelez la pharmacie avant de vous déplacer.",
     footerNote:
       "Mawjoud — projet en cours de construction. Aucune information médicale n'est fournie sur ce site.",
-    backHome: "← Retour à la recherche",
+    backHome: "Retour à la recherche",
     contactEmail: "contact@mawjoud.tn",
+    homeAriaLabel: "Mawjoud — accueil",
   },
   home: {
+    title: "Trouvez votre médicament à Bizerte",
+    loading: "Chargement de la page d'accueil…",
     ctaPharmacies: "Voir toutes les pharmacies de Bizerte",
   },
   apiStatus: {
     title: "État des services",
+    subtitle:
+      "Page technique : elle vérifie que le site parvient à joindre le serveur Mawjoud.",
     checking: "Vérification en cours…",
     apiOk: "API connectée",
     apiError: "API injoignable",
@@ -24,7 +32,7 @@ export const fr = {
     coldStart: "Le serveur gratuit peut mettre jusqu'à une minute à démarrer.",
   },
   nav: {
-    home: "← Accueil",
+    home: "Accueil",
   },
   pharmacies: {
     title: "Pharmacies de Bizerte",
@@ -32,13 +40,16 @@ export const fr = {
     count: (n: number) => `${n} pharmacie${n > 1 ? "s" : ""}`,
     loading: "Chargement des pharmacies…",
     error: "Impossible de charger la liste des pharmacies pour le moment.",
+    errorTitle: "Annuaire indisponible",
     retry: "Réessayer",
     empty: "Aucune pharmacie n'est enregistrée pour le moment.",
+    emptyTitle: "Aucune pharmacie",
     viewToggleLabel: "Choisir l'affichage",
     viewList: "Liste",
     viewMap: "Carte",
     showOnMap: "Voir sur la carte",
     call: "Téléphone",
+    callAria: (phone: string) => `Appeler le ${phone}`,
     noPhone: "Téléphone non renseigné",
     mapAriaLabel: "Carte des pharmacies de Bizerte",
     mapLoading: "Chargement de la carte…",
@@ -47,12 +58,13 @@ export const fr = {
   },
   search: {
     label: "Quel médicament cherchez-vous ?",
-    placeholder: "Nom de marque ou molécule (ex. Levothyrox)",
+    placeholder: "Ex. Levothyrox, insuline, sertraline",
     hint: "Saisissez au moins 3 lettres. Les fautes de frappe sont tolérées.",
     searching: "Recherche en cours…",
     error: "La recherche est momentanément indisponible. Utilisez la liste ci-dessous.",
     noResults: (q: string) => `Aucun médicament suivi ne correspond à « ${q} ».`,
     noResultsHint: "Mawjoud ne suit qu'une sélection de médicaments pour le moment.",
+    noResultsCta: "Voir les médicaments suivis",
     resultCount: (n: number) => `${n} résultat${n > 1 ? "s" : ""}`,
     listboxLabel: "Suggestions de médicaments",
   },
@@ -63,6 +75,7 @@ export const fr = {
     trackedNote:
       "Mawjoud suit une sélection de traitements chroniques régulièrement en tension. D'autres médicaments seront ajoutés progressivement.",
     loadError: "La liste des médicaments est momentanément indisponible.",
+    loadErrorTitle: "Liste indisponible",
     categories: {
       thyroid: "Thyroïde",
       insulin: "Insulines",
@@ -89,10 +102,12 @@ export const fr = {
     staleWarning: "Signalement ancien — appelez la pharmacie avant de vous déplacer.",
     summary: (inStock: number, total: number) =>
       `${inStock} pharmacie${inStock > 1 ? "s" : ""} sur ${total} signale${inStock > 1 ? "nt" : ""} ce médicament comme disponible.`,
-    pharmacyCount: (n: number) => `${n} pharmacie${n > 1 ? "s" : ""}`,
     noReportsAtAll: "Aucun signalement pour ce médicament pour le moment.",
+    noReportsBody: (n: number) =>
+      `Les ${n} pharmacies suivies par Mawjoud à Bizerte sont listées ci-dessous.`,
     loading: "Chargement des disponibilités…",
     error: "Impossible de charger les disponibilités pour le moment.",
+    errorTitle: "Disponibilités indisponibles",
     retry: "Réessayer",
     notFoundTitle: "Médicament introuvable",
     notFoundBody:
@@ -131,9 +146,22 @@ export const fr = {
     onDate: (d: string) => `le ${d}`,
   },
   footer: {
+    navLabel: "Liens du site",
     pharmacies: "Pharmacies",
     status: "État des services",
     pharmacist: "Espace pharmacien",
+  },
+  errors: {
+    title: "Une erreur est survenue",
+    body: "Cette page n'a pas pu s'afficher correctement. Réessayez ; si le problème persiste, revenez dans quelques minutes.",
+    retry: "Réessayer",
+    backHome: "Retour à l'accueil",
+    pharmacistTitle: "Une erreur est survenue",
+    pharmacistBody:
+      "Votre espace pharmacien n'a pas pu s'afficher. Réessayez — aucune donnée n'est perdue.",
+    globalTitle: "Mawjoud est momentanément indisponible",
+    globalBody: "Une erreur inattendue est survenue. Rechargez la page pour réessayer.",
+    globalRetry: "Recharger la page",
   },
   pharmacist: {
     notice:
@@ -164,6 +192,7 @@ export const fr = {
       codeChecking: "Vérification…",
       codeInvalid: "Code incorrect ou expiré. Demandez un nouveau lien.",
       resend: "Renvoyer un lien",
+      resent: "Un nouveau lien vient d'être envoyé.",
     },
 
     validation: {
@@ -175,6 +204,7 @@ export const fr = {
     },
 
     register: {
+      loading: "Chargement du formulaire d'inscription…",
       title: "Inscrire votre pharmacie",
       intro:
         "L'inscription est réservée aux pharmacies de la région de Bizerte déjà référencées sur Mawjoud. Votre compte est activé après un appel de vérification au numéro de la pharmacie.",

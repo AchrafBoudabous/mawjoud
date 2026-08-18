@@ -23,3 +23,8 @@ venv/
 Thumbs.db
 .idea/
 .vscode/
+
+# Local-only: AI assistant config and planning docs
+.claude/
+CLAUDE.md
+docs/

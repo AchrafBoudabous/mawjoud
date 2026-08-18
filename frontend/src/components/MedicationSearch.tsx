@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { MedicationMatch } from "@/lib/api";
 import { searchMedications } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
+import { BUTTON_QUIET, FIELD } from "@/lib/ui";
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
 
@@ -113,7 +115,10 @@ export function MedicationSearch({ label, compact, autoFocus }: MedicationSearch
 
   return (
     <div ref={containerRef} className="relative">
-      <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink">
+      <label
+        htmlFor={inputId}
+        className={`mb-1 block text-sm font-medium text-ink ${compact ? "sr-only" : ""}`}
+      >
         {label ?? dict.search.label}
       </label>
       <input
@@ -136,7 +141,7 @@ export function MedicationSearch({ label, compact, autoFocus }: MedicationSearch
           if (status !== "idle") setOpen(true);
         }}
         placeholder={dict.search.placeholder}
-        className="h-12 w-full rounded-md border border-gray-200 bg-surface px-3 text-base text-ink"
+        className={`${FIELD} ${compact ? "h-11" : ""}`}
       />
       {!compact && <p className="mt-1 text-xs text-muted">{dict.search.hint}</p>}
 
@@ -145,18 +150,25 @@ export function MedicationSearch({ label, compact, autoFocus }: MedicationSearch
         role="listbox"
         aria-label={dict.search.listboxLabel}
         hidden={!open}
-        className="absolute z-10 mt-1 max-h-80 w-full overflow-y-auto rounded-md border border-gray-200 bg-surface shadow-sm"
+        className="absolute z-[1000] mt-1 max-h-80 w-full overflow-y-auto rounded-card border border-line bg-surface shadow-raised animate-fade-in-up"
       >
-        {status === "loading" && (
-          <li className="px-3 py-3 text-sm text-muted">{dict.search.searching}</li>
-        )}
+        {status === "loading" &&
+          Array.from({ length: 3 }).map((_, i) => (
+            <li key={i} aria-hidden="true" className="px-3 py-2">
+              <div className="h-4 w-1/2 animate-pulse-soft rounded-field bg-skeleton" />
+              <div className="mt-1 h-3.5 w-3/4 animate-pulse-soft rounded-field bg-skeleton" />
+            </li>
+          ))}
         {status === "error" && (
           <li className="px-3 py-3 text-sm text-warn-text">{dict.search.error}</li>
         )}
         {status === "ready" && results.length === 0 && (
-          <li className="px-3 py-3 text-sm text-muted">
-            <p>{dict.search.noResults(query.trim())}</p>
-            <p className="mt-1">{dict.search.noResultsHint}</p>
+          <li className="px-3 py-4">
+            <p className="text-sm font-medium text-ink">{dict.search.noResults(query.trim())}</p>
+            <p className="mt-1 text-xs text-muted">{dict.search.noResultsHint}</p>
+            <Link href="#medicaments-suivis" className={`mt-2 inline-block ${BUTTON_QUIET}`}>
+              {dict.search.noResultsCta}
+            </Link>
           </li>
         )}
         {status === "ready" &&
@@ -182,7 +194,11 @@ export function MedicationSearch({ label, compact, autoFocus }: MedicationSearch
       </ul>
 
       <p aria-live="polite" className="sr-only">
-        {status === "ready" ? dict.search.resultCount(results.length) : ""}
+        {status === "loading"
+          ? dict.search.searching
+          : status === "ready"
+            ? dict.search.resultCount(results.length)
+            : ""}
       </p>
     </div>
   );

@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Disclaimer } from "@/components/Disclaimer";
 import { MedicationSearch } from "@/components/MedicationSearch";
+import { PageContainer } from "@/components/PageContainer";
 import { SearchEventLogger } from "@/components/SearchEventLogger";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import { StockResults } from "@/components/StockResults";
+import { BackLink } from "@/components/ui/BackLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { BUTTON_BASE, BUTTON_SECONDARY } from "@/lib/ui";
 import type { MedicationStockResponse } from "@/lib/api";
 import { ApiError, getMedicationStock } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
@@ -50,16 +54,15 @@ export default async function MedicationPage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-screen-sm flex-col gap-6 px-4 py-8 md:max-w-6xl">
+    <PageContainer width="wide">
       {data && <SearchEventLogger slug={data.medication.slug} />}
+      <SiteHeader />
       <header>
-        <Link href="/" className="text-sm text-brand-600 underline">
-          {dict.nav.home}
-        </Link>
+        <BackLink href="/" label={dict.nav.home} />
         {data && (
           <>
-            <h1 className="mt-2 text-2xl font-bold text-ink">{data.medication.name}</h1>
-            <p className="mt-1 text-muted">
+            <h1 className="mt-2 text-2xl font-semibold text-ink">{data.medication.name}</h1>
+            <p className="mt-1 text-base text-muted">
               {data.medication.generic_name}
               {data.medication.form ? ` · ${data.medication.form}` : ""}
             </p>
@@ -78,20 +81,21 @@ export default async function MedicationPage({ params }: PageProps) {
           medicationSlug={data.medication.slug}
         />
       ) : (
-        <div>
-          <p role="alert" className="text-sm text-warn-text">
-            {dict.stock.error}
-          </p>
-          <a
-            href={`/medicaments/${slug}`}
-            className="mt-2 inline-block text-sm text-brand-600 underline"
-          >
-            {dict.stock.retry}
-          </a>
-        </div>
+        <EmptyState
+          tone="warn"
+          role="alert"
+          icon="alert"
+          title={dict.stock.errorTitle}
+          body={dict.stock.error}
+          action={
+            <a href={`/medicaments/${slug}`} className={`${BUTTON_BASE} ${BUTTON_SECONDARY}`}>
+              {dict.stock.retry}
+            </a>
+          }
+        />
       )}
 
       <SiteFooter />
-    </div>
+    </PageContainer>
   );
 }

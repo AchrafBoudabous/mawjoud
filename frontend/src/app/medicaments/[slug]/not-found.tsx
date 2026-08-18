@@ -1,16 +1,34 @@
 import Link from "next/link";
+import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { BUTTON_BASE, BUTTON_SECONDARY } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n";
 
 export default function NotFound() {
   const dict = getDictionary();
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-screen-sm flex-col items-center justify-center gap-4 px-4 py-8 text-center">
-      <h1 className="text-2xl font-bold text-ink">{dict.stock.notFoundTitle}</h1>
-      <p className="text-muted">{dict.stock.notFoundBody}</p>
-      <Link href="/" className="text-sm text-brand-600 underline">
-        {dict.common.backHome}
-      </Link>
-    </div>
+    <PageContainer>
+      <SiteHeader />
+
+      <Disclaimer />
+
+      <EmptyState
+        headingLevel={1}
+        icon="search"
+        title={dict.stock.notFoundTitle}
+        body={dict.stock.notFoundBody}
+        action={
+          <Link href="/" className={`${BUTTON_BASE} ${BUTTON_SECONDARY}`}>
+            {dict.common.backHome}
+          </Link>
+        }
+      />
+
+      <SiteFooter />
+    </PageContainer>
   );
 }

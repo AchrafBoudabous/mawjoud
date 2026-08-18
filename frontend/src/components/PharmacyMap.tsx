@@ -2,8 +2,8 @@
 
 import type { MapMarker } from "@/components/MapView";
 import { MapView } from "@/components/MapView";
+import { PhoneLink } from "@/components/ui/PhoneLink";
 import type { Pharmacy } from "@/lib/api";
-import { formatPhone } from "@/lib/format";
 import { getDictionary } from "@/lib/i18n";
 
 type PharmacyMapProps = {
@@ -24,17 +24,11 @@ export function PharmacyMap({ pharmacies, selectedId, isVisible }: PharmacyMapPr
     lng: p.lng,
     color: BRAND_PIN_COLOR,
     popup: (
-      <>
-        <strong>{p.name}</strong>
-        <br />
-        <span>{p.address}</span>
-        {p.phone && (
-          <>
-            <br />
-            <a href={`tel:${p.phone}`}>{formatPhone(p.phone)}</a>
-          </>
-        )}
-      </>
+      <div className="mawjoud-popup flex w-full flex-col gap-2">
+        <p className="text-sm font-semibold text-ink">{p.name}</p>
+        <p className="text-xs text-muted">{p.address}</p>
+        <PhoneLink phone={p.phone} />
+      </div>
     ),
   }));
 

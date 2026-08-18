@@ -103,7 +103,7 @@ export default function MapViewInner({
     <div
       role="region"
       aria-label={ariaLabel}
-      className="h-[60vh] min-h-80 w-full overflow-hidden rounded-lg border md:h-[70vh]"
+      className="h-[60vh] min-h-80 w-full overflow-hidden rounded-card border border-line shadow-card md:h-[70vh]"
     >
       <MapContainer className="h-full w-full" scrollWheelZoom={false} {...framingProps}>
         <TileLayer
@@ -113,7 +113,9 @@ export default function MapViewInner({
         />
         {markers.map((m) => (
           <Marker key={m.id} position={[m.lat, m.lng]} icon={icons.get(m.color)}>
-            <Popup>{m.popup}</Popup>
+            <Popup maxWidth={280} minWidth={220}>
+              {m.popup}
+            </Popup>
           </Marker>
         ))}
         <FlyToSelected selectedId={selectedId} markers={markers} />

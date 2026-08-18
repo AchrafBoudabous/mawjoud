@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
 import { PharmacyDirectory } from "@/components/PharmacyDirectory";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { BackLink } from "@/components/ui/BackLink";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { BUTTON_BASE, BUTTON_SECONDARY } from "@/lib/ui";
 import { getPharmacies } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
 
@@ -23,32 +27,38 @@ export default async function PharmaciesPage() {
     const data = await getPharmacies();
 
     if (data.count === 0) {
-      content = <p className="text-muted">{dict.pharmacies.empty}</p>;
+      content = (
+        <EmptyState icon="pharmacy" title={dict.pharmacies.emptyTitle} body={dict.pharmacies.empty} />
+      );
     } else {
       content = <PharmacyDirectory pharmacies={data.pharmacies} />;
     }
   } catch (error) {
     console.error("Failed to load pharmacies:", error);
     content = (
-      <div>
-        <p role="alert" className="text-sm text-warn-text">
-          {dict.pharmacies.error}
-        </p>
-        <a href="/pharmacies" className="mt-2 inline-block text-sm text-brand-600 underline">
-          {dict.pharmacies.retry}
-        </a>
-      </div>
+      <EmptyState
+        tone="warn"
+        role="alert"
+        icon="alert"
+        title={dict.pharmacies.errorTitle}
+        body={dict.pharmacies.error}
+        action={
+          <a href="/pharmacies" className={`${BUTTON_BASE} ${BUTTON_SECONDARY}`}>
+            {dict.pharmacies.retry}
+          </a>
+        }
+      />
     );
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-screen-sm flex-col gap-6 px-4 py-8 md:max-w-6xl">
+    <PageContainer width="wide">
+      <SiteHeader />
+
       <header>
-        <Link href="/" className="text-sm text-brand-600 underline">
-          {dict.nav.home}
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-ink">{dict.pharmacies.title}</h1>
-        <p className="mt-1 text-muted">{dict.pharmacies.subtitle}</p>
+        <BackLink href="/" label={dict.nav.home} />
+        <h1 className="mt-2 text-2xl font-semibold text-ink">{dict.pharmacies.title}</h1>
+        <p className="mt-1 text-base text-muted">{dict.pharmacies.subtitle}</p>
       </header>
 
       <Disclaimer />
@@ -56,6 +66,6 @@ export default async function PharmaciesPage() {
       {content}
 
       <SiteFooter />
-    </div>
+    </PageContainer>
   );
 }

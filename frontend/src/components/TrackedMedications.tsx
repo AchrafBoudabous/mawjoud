@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Medication } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
 import { CATEGORY_ORDER } from "@/lib/medications";
+import { CARD_INTERACTIVE } from "@/lib/ui";
 
 type TrackedMedicationsProps = {
   medications: Medication[];
@@ -11,7 +12,7 @@ export function TrackedMedications({ medications }: TrackedMedicationsProps) {
   const dict = getDictionary();
 
   return (
-    <section>
+    <section id="medicaments-suivis" className="scroll-mt-6">
       <h2 className="text-lg font-semibold text-ink">{dict.medications.trackedTitle}</h2>
       <p className="mt-1 text-sm text-muted">
         {dict.medications.trackedCount(medications.length)}
@@ -31,10 +32,7 @@ export function TrackedMedications({ medications }: TrackedMedicationsProps) {
               <ul className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {items.map((m) => (
                   <li key={m.id}>
-                    <Link
-                      href={`/medicaments/${m.slug}`}
-                      className="block rounded-lg border border-gray-200 bg-surface p-3 hover:border-brand-600"
-                    >
+                    <Link href={`/medicaments/${m.slug}`} className={`block ${CARD_INTERACTIVE} p-4`}>
                       <p className="font-medium text-ink">{m.name}</p>
                       <p className="text-sm text-muted">{m.generic_name}</p>
                     </Link>

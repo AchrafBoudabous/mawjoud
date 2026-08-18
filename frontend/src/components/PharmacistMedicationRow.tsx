@@ -5,6 +5,7 @@ import type { ToggleUiState } from "@/components/StockToggle";
 import { StockToggle } from "@/components/StockToggle";
 import type { DashboardMedication, StockStatus } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
+import { CARD } from "@/lib/ui";
 
 type PharmacistMedicationRowProps = {
   medication: DashboardMedication;
@@ -22,7 +23,7 @@ export function PharmacistMedicationRow({
   const dict = getDictionary();
 
   return (
-    <li className="rounded-lg border bg-surface p-4">
+    <li className={`${CARD} p-4`}>
       <h4 className="font-medium text-ink">{medication.name}</h4>
       <p className="text-sm text-muted">
         {medication.generic_name}
@@ -50,19 +51,14 @@ export function PharmacistMedicationRow({
         onSelect={(status) => onToggle(medication, status)}
       />
 
-      <p
-        className="mt-2 text-xs text-muted"
-        title={dict.pharmacist.dashboard.searchCountHint}
-      >
-        {dict.pharmacist.dashboard.searchCount(medication.searches_last_7_days)}
-      </p>
-
-      <Link
-        href={`/medicaments/${medication.slug}`}
-        className="mt-1 inline-block text-xs text-brand-600 underline"
-      >
-        {dict.pharmacist.dashboard.viewPublicPage}
-      </Link>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+        <span title={dict.pharmacist.dashboard.searchCountHint} className="tabular-nums">
+          {dict.pharmacist.dashboard.searchCount(medication.searches_last_7_days)}
+        </span>
+        <Link href={`/medicaments/${medication.slug}`} className="text-brand-700 underline decoration-1 underline-offset-4 transition-colors duration-150 ease-standard hover:text-brand-800">
+          {dict.pharmacist.dashboard.viewPublicPage}
+        </Link>
+      </div>
     </li>
   );
 }

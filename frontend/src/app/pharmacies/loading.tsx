@@ -1,11 +1,40 @@
+import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
+import { PharmacyCardSkeleton } from "@/components/skeletons/PharmacyCardSkeleton";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { BackLink } from "@/components/ui/BackLink";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { getDictionary } from "@/lib/i18n";
 
 export default function Loading() {
   const dict = getDictionary();
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-screen-sm flex-col gap-6 px-4 py-8 md:max-w-6xl">
-      <p className="py-12 text-center text-muted">{dict.pharmacies.loading}</p>
-    </div>
+    <PageContainer width="wide">
+      <SiteHeader />
+
+      <header>
+        <BackLink href="/" label={dict.nav.home} />
+        <Skeleton className="mt-2 h-6 w-2/5" />
+      </header>
+
+      <Disclaimer />
+
+      <Skeleton className="h-11 w-full md:hidden" />
+      <Skeleton className="h-3.5 w-1/3" />
+
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <PharmacyCardSkeleton key={i} />
+        ))}
+      </div>
+
+      <p role="status" className="sr-only">
+        {dict.pharmacies.loading}
+      </p>
+
+      <SiteFooter />
+    </PageContainer>
   );
 }

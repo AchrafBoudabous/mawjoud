@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MagicLinkPrompt } from "@/components/MagicLinkPrompt";
 import { getAccessToken, sendMagicLink } from "@/lib/supabase/auth";
 import { getDictionary } from "@/lib/i18n";
+import { BUTTON_BASE, BUTTON_PRIMARY, FIELD } from "@/lib/ui";
 
 type Phase = "idle" | "sending" | "sent";
 type LoginError = "rate_limited" | null;
@@ -71,7 +72,7 @@ export function PharmacistLoginForm() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{dict.pharmacist.login.title}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{dict.pharmacist.login.title}</h1>
         <p className="mt-1 text-sm text-muted">{dict.pharmacist.login.intro}</p>
       </div>
 
@@ -87,7 +88,7 @@ export function PharmacistLoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-12 rounded-md border border-gray-200 px-3 text-base"
+          className={FIELD}
         />
 
         {error === "rate_limited" && (
@@ -99,7 +100,7 @@ export function PharmacistLoginForm() {
         <button
           type="submit"
           disabled={phase === "sending"}
-          className="min-h-11 rounded-md bg-brand-600 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${BUTTON_BASE} ${BUTTON_PRIMARY} w-full sm:w-auto`}
         >
           {phase === "sending" ? dict.pharmacist.login.sending : dict.pharmacist.login.submit}
         </button>
@@ -107,7 +108,10 @@ export function PharmacistLoginForm() {
 
       <p className="text-sm text-muted">
         {dict.pharmacist.login.noAccount}{" "}
-        <Link href="/pharmacien/inscription" className="text-brand-600 underline">
+        <Link
+          href="/pharmacien/inscription"
+          className="text-brand-700 underline decoration-1 underline-offset-4 transition-colors duration-150 ease-standard hover:text-brand-800"
+        >
           {dict.pharmacist.login.registerLink}
         </Link>
       </p>

@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ToggleUiState } from "@/components/StockToggle";
 import { AccountStatusBanner } from "@/components/AccountStatusBanner";
+import { PharmacistDashboardSkeleton } from "@/components/skeletons/PharmacistDashboardSkeleton";
 import { PharmacistMedicationRow } from "@/components/PharmacistMedicationRow";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { revalidateMedicationStock } from "@/lib/actions/stock";
 import type {
@@ -19,6 +21,7 @@ import { getDictionary } from "@/lib/i18n";
 import { CATEGORY_ORDER } from "@/lib/medications";
 import { classifyPharmacistError, TOGGLE_SLOW_AFTER_MS, type PharmacistErrorKind } from "@/lib/pharmacist";
 import { getAccessToken, onAuthChange, signOutPharmacist } from "@/lib/supabase/auth";
+import { BUTTON_BASE, BUTTON_PRIMARY, BUTTON_QUIET } from "@/lib/ui";
 
 type Phase =
   | { kind: "checking" }
@@ -153,34 +156,46 @@ export function PharmacistDashboard() {
   );
 
   if (phase.kind === "checking" || phase.kind === "loading") {
-    return <p className="text-sm text-muted">{dict.pharmacist.dashboard.loading}</p>;
+    return (
+      <>
+        <PharmacistDashboardSkeleton />
+        <p role="status" className="sr-only">
+          {dict.pharmacist.dashboard.loading}
+        </p>
+      </>
+    );
   }
 
   if (phase.kind === "error") {
     if (phase.error === "no_account") {
       return (
-        <div className="flex flex-col gap-3">
-          <h1 className="text-xl font-bold text-ink">{dict.pharmacist.status.noAccountTitle}</h1>
-          <p className="text-sm text-muted">{dict.pharmacist.status.noAccountBody}</p>
-          <Link href="/pharmacien/inscription" className="text-sm text-brand-600 underline">
-            {dict.pharmacist.status.registerCta}
-          </Link>
-        </div>
+        <EmptyState
+          headingLevel={1}
+          icon="pharmacy"
+          title={dict.pharmacist.status.noAccountTitle}
+          body={dict.pharmacist.status.noAccountBody}
+          action={
+            <Link href="/pharmacien/inscription" className={`${BUTTON_BASE} ${BUTTON_PRIMARY}`}>
+              {dict.pharmacist.status.registerCta}
+            </Link>
+          }
+        />
       );
     }
     return (
-      <div className="flex flex-col gap-3">
-        <p role="alert" className="text-sm text-warn-text">
-          {dict.pharmacist.dashboard.errors[phase.error]}
-        </p>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="inline-block w-fit text-sm text-brand-600 underline"
-        >
-          {dict.pharmacist.dashboard.retry}
-        </button>
-      </div>
+      <EmptyState
+        headingLevel={1}
+        tone="warn"
+        role="alert"
+        icon="alert"
+        title={dict.errors.title}
+        body={dict.pharmacist.dashboard.errors[phase.error]}
+        action={
+          <button type="button" onClick={() => void load()} className={`${BUTTON_BASE} ${BUTTON_PRIMARY}`}>
+            {dict.pharmacist.dashboard.retry}
+          </button>
+        }
+      />
     );
   }
 
@@ -196,16 +211,18 @@ export function PharmacistDashboard() {
     <div className="flex flex-col gap-6">
       <header>
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-ink">{pharmacy.name}</h2>
+          <h1 className="text-xl font-semibold text-ink">{pharmacy.name}</h1>
           {pharmacy.verified && <VerifiedBadge />}
         </div>
         <p className="text-sm text-muted">{pharmacy.address}</p>
         {pharmacy.city !== "Bizerte" && <p className="text-sm text-muted">{pharmacy.city}</p>}
       </header>
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">{dict.pharmacist.dashboard.signedInAs(account.email)}</p>
-        <button type="button" onClick={handleLogout} className="text-sm text-brand-600 underline">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="min-w-0 break-all text-sm text-muted">
+          {dict.pharmacist.dashboard.signedInAs(account.email)}
+        </p>
+        <button type="button" onClick={handleLogout} className={BUTTON_QUIET}>
           {dict.pharmacist.dashboard.logout}
         </button>
       </div>
@@ -220,7 +237,10 @@ export function PharmacistDashboard() {
           <ul className="mt-2 flex flex-col gap-1 text-sm text-muted">
             {topSearched.map((m) => (
               <li key={m.id}>
-                {m.name} — {dict.pharmacist.dashboard.searchCount(m.searches_last_7_days)}
+                {m.name} —{" "}
+                <span className="tabular-nums">
+                  {dict.pharmacist.dashboard.searchCount(m.searches_last_7_days)}
+                </span>
               </li>
             ))}
           </ul>

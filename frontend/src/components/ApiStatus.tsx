@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getApiHealth, getDbHealth } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
+import { BUTTON_BASE, BUTTON_PRIMARY } from "@/lib/ui";
 
 type CheckState = "checking" | "ok" | "error";
 
@@ -19,9 +20,9 @@ function StatusLine({
 }) {
   const dotColor =
     state === "ok"
-      ? "bg-brand-600"
+      ? "bg-stock-in"
       : state === "error"
-        ? "bg-red-500"
+        ? "bg-stock-out"
         : "bg-muted";
 
   const label =
@@ -77,10 +78,7 @@ export function ApiStatus() {
   const hasError = apiState === "error" || dbState === "error";
 
   return (
-    <section className="rounded-lg border border-brand-50 bg-surface p-4 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold text-ink">
-        {dict.apiStatus.title}
-      </h2>
+    <section aria-label={dict.apiStatus.title} className="rounded-card border border-line bg-surface p-4 shadow-card">
       <div className="flex flex-col gap-2">
         <StatusLine
           state={apiState}
@@ -97,11 +95,7 @@ export function ApiStatus() {
         <p className="mt-3 text-xs text-muted">{dict.apiStatus.coldStart}</p>
       )}
       {hasError && !isChecking && (
-        <button
-          type="button"
-          onClick={runChecks}
-          className="mt-3 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-        >
+        <button type="button" onClick={runChecks} className={`mt-3 ${BUTTON_BASE} ${BUTTON_PRIMARY}`}>
           {dict.apiStatus.retry}
         </button>
       )}
