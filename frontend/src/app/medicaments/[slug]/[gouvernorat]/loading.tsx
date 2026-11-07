@@ -2,8 +2,6 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
 import { SearchFieldSkeleton } from "@/components/skeletons/SearchFieldSkeleton";
 import { StockResultsSkeleton } from "@/components/skeletons/StockResultsSkeleton";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BackLink } from "@/components/ui/BackLink";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getDictionary } from "@/lib/i18n";
@@ -13,7 +11,6 @@ export default function Loading() {
 
   return (
     <PageContainer width="wide">
-      <SiteHeader />
 
       <header>
         <BackLink href="/" label={dict.nav.home} />
@@ -31,7 +28,6 @@ export default function Loading() {
         {dict.stock.loading}
       </p>
 
-      <SiteFooter />
     </PageContainer>
   );
 }

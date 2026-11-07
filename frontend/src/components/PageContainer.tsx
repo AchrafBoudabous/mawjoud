@@ -1,23 +1,22 @@
+import { cn } from "@/lib/utils";
+
 type PageContainerProps = {
   children: React.ReactNode;
   /** "page" = single-column reading routes; "wide" = list + map routes. */
   width?: "page" | "wide";
+  className?: string;
 };
 
-/**
- * One container, not nine copies. Renders the exact 640px / 1152px widths
- * the app already rendered before this step (the old breakpoint-alias and
- * numeric utilities both worked correctly under this project's Tailwind v4
- * setup — see docs/ARCHITECTURE.md 8.2.1). This is a DRY consolidation,
- * not a width fix: the literal container class string used to appear in
- * nine different files and had already started to drift.
- */
-export function PageContainer({ children, width = "page" }: PageContainerProps) {
+/** The content column under the sticky header. Header and footer are
+ *  rendered once by the root layout. */
+export function PageContainer({ children, width = "page", className }: PageContainerProps) {
   return (
     <div
-      className={`mx-auto flex min-h-screen w-full flex-col gap-6 px-4 py-8 animate-fade-in md:gap-8 md:px-6 ${
-        width === "wide" ? "max-w-page md:max-w-wide" : "max-w-page"
-      }`}
+      className={cn(
+        "mx-auto flex w-full flex-col gap-6 px-4 pt-6 pb-4 animate-fade-in md:gap-8 md:px-6 md:pt-10",
+        width === "wide" ? "max-w-page md:max-w-wide" : "max-w-page",
+        className
+      )}
     >
       {children}
     </div>

@@ -17,6 +17,12 @@ export function getSupabaseBrowserClient(): SupabaseClient {
         "NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are not configured."
       );
     }
+    if (!/^https:\/\/[^/]+/.test(url) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(url)) {
+      // The easy mistake: pasting the publishable key into the URL slot.
+      throw new Error(
+        "NEXT_PUBLIC_SUPABASE_URL must be the project URL (https://<ref>.supabase.co), not a key."
+      );
+    }
     client = createClient(url, anonKey, {
       auth: {
         flowType: "pkce",

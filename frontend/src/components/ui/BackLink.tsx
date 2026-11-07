@@ -14,7 +14,7 @@ export function BackLink({ href, label }: BackLinkProps) {
   return (
     <Link
       href={href}
-      className="-ml-1 inline-flex min-h-11 items-center gap-1 px-1 text-sm font-medium text-brand-700 underline decoration-1 underline-offset-4 transition-colors duration-150 ease-standard hover:text-brand-800"
+      className="pressable -ml-2 inline-flex min-h-10 items-center gap-1 rounded-full px-2.5 text-sm font-semibold text-brand-700 hover:bg-brand-50 hover:text-brand-800"
     >
       <Icon name="chevron-left" className="size-4 shrink-0" />
       {label}

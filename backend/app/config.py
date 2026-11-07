@@ -1,3 +1,5 @@
+import logging
+import re
 from typing import Annotated, Optional
 
 from pydantic import Field, field_validator
@@ -37,6 +39,10 @@ class Settings(BaseSettings):
     # "cf-connecting-ip"): trust exactly that one header. Never sniffed,
     # never a fallback chain — see docs/ARCHITECTURE.md 4.3.
     client_ip_header: Optional[str] = None
+    # Interactive API docs (/docs, /redoc, /openapi.json). Defaults to ON
+    # outside production and OFF in production; set EXPOSE_DOCS=true to
+    # force them on (e.g. temporarily, to test a token against prod).
+    expose_docs: Optional[bool] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -58,6 +64,63 @@ class Settings(BaseSettings):
                 if origin
             ]
         return value
+
+    @field_validator("supabase_url", mode="after")
+    @classmethod
+    def _strip_supabase_url(cls, value: str) -> str:
+        # Every caller builds paths as f"{supabase_url}/rest/v1/..."; a
+        # trailing slash would produce "//rest/v1".
+        return value.strip().rstrip("/")
+
+    @field_validator("allowed_origin_regex", mode="after")
+    @classmethod
+    def _reject_overbroad_origin_regex(cls, value: Optional[str]) -> Optional[str]:
+        """Drop (and log) a CORS regex that admits origins we do not
+        control. `https://.*\\.vercel\\.app` admits *every* Vercel site on
+        the internet: any of them could then make its visitors' browsers
+        file stock reports from thousands of distinct IPs, sidestepping
+        the per-fingerprint rate limit entirely. In production, prefer no
+        regex at all (list exact origins in ALLOWED_ORIGINS); if preview
+        deployments must reach this API, anchor the regex on your Vercel
+        team slug, e.g. `https://mawjoud-[a-z0-9]+-<team-slug>\\.vercel\\.app`.
+        This probe list is a tripwire for the obvious mistake, not a proof
+        that a given regex is safe.
+        """
+        if value is None or not value.strip():
+            return None
+        value = value.strip()
+        try:
+            pattern = re.compile(value)
+        except re.error as exc:
+            raise ValueError(f"ALLOWED_ORIGIN_REGEX is not a valid regex: {exc}") from exc
+        for foreign_origin in _FOREIGN_ORIGIN_PROBES:
+            if pattern.fullmatch(foreign_origin):
+                # Fail SAFE, not fatal: drop the regex (exact
+                # ALLOWED_ORIGINS keep working) instead of refusing to
+                # boot, so a deploy carrying this fix cannot take the API
+                # down while the env var still holds the old value.
+                logging.getLogger(__name__).error(
+                    "ALLOWED_ORIGIN_REGEX ignored: too broad, it matches %r. "
+                    "Scope it to this project's own hostnames.",
+                    foreign_origin,
+                )
+                return None
+        return value
+
+    @property
+    def docs_enabled(self) -> bool:
+        if self.expose_docs is not None:
+            return self.expose_docs
+        return self.environment.lower() != "production"
+
+
+# Origins no legitimate ALLOWED_ORIGIN_REGEX may ever match.
+_FOREIGN_ORIGIN_PROBES = (
+    "https://attacker-controlled-site.vercel.app",
+    "https://evil.example.com",
+    "http://evil.example.com",
+    "https://evil.onrender.com",
+)
 
 
 settings = Settings()

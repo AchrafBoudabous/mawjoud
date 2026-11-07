@@ -4,13 +4,15 @@ import { getDictionary } from "@/lib/i18n";
 
 type AccountStatusBannerProps = {
   status: PharmacistAccountStatus;
+  /** The admin's reason (rejected / suspended). */
+  reviewNote?: string | null;
 };
 
 /** Renders nothing when `active`. `pending` is expected and reassuring —
  *  it means "we are calling your pharmacy" — so it gets the `info` tone;
  *  `rejected` / `suspended` are cautions and get `warn`. See
  *  docs/ARCHITECTURE.md 8.14 e6. */
-export function AccountStatusBanner({ status }: AccountStatusBannerProps) {
+export function AccountStatusBanner({ status, reviewNote }: AccountStatusBannerProps) {
   const dict = getDictionary();
 
   if (status === "active") {
@@ -37,6 +39,7 @@ export function AccountStatusBanner({ status }: AccountStatusBannerProps) {
   ) : (
     <NoticeCard tone="warn" icon="alert" role="status" title={copy.title}>
       {copy.body}
+      {reviewNote && <span className="mt-1 block font-semibold">{dict.pharmacist.status.reason(reviewNote)}</span>}
     </NoticeCard>
   );
 }

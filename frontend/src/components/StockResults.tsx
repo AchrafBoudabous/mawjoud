@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AvailabilitySummary } from "@/components/AvailabilitySummary";
+import { NearbyControls } from "@/components/NearbyControls";
 import { StockLegend } from "@/components/StockLegend";
 import { StockMap } from "@/components/StockMap";
 import { StockPharmacyList } from "@/components/StockPharmacyList";
@@ -9,25 +11,47 @@ import type { ReportUiState } from "@/components/StockReportButtons";
 import { NoticeCard } from "@/components/ui/NoticeCard";
 import { ViewToggle } from "@/components/ViewToggle";
 import { revalidateMedicationStock } from "@/lib/actions/stock";
-import type { PatientReportStatus, PharmacyStock, ReportSource, StockStatus, StockSummary } from "@/lib/api";
+import type {
+  Governorate,
+  Medication,
+  PatientReportStatus,
+  PharmacyStock,
+  ReportSource,
+  StockStatus,
+  StockSummary,
+} from "@/lib/api";
 import { reportStock } from "@/lib/api";
+import { distanceKm, type LatLng } from "@/lib/geo";
 import { getDictionary } from "@/lib/i18n";
+import { getRecentPosition, setPreferredGovernorate } from "@/lib/prefs";
 import { classifyReportError, REPORT_SLOW_AFTER_MS } from "@/lib/stock";
 
 type StockResultsProps = {
   pharmacies: PharmacyStock[];
-  medicationName: string;
-  medicationSlug: string;
+  medication: Medication;
+  governorate: Governorate;
 };
 
 type LocalReport = { status: StockStatus; reported_at: string; reported_by: ReportSource };
 
-export function StockResults({ pharmacies, medicationName, medicationSlug }: StockResultsProps) {
+export function StockResults({ pharmacies, medication, governorate }: StockResultsProps) {
   const dict = getDictionary();
   const [view, setView] = useState<"list" | "map">("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [localReports, setLocalReports] = useState<Record<string, LocalReport>>({});
   const [reportUi, setReportUi] = useState<Record<string, ReportUiState>>({});
+  const [position, setPosition] = useState<LatLng | null>(null);
+  const [dutyOnly, setDutyOnly] = useState(false);
+
+  useEffect(() => {
+    setPreferredGovernorate(governorate.slug);
+    // Arrived through "Près de moi": reuse the position cached on this
+    // device a moment ago rather than prompting again.
+    if (new URLSearchParams(window.location.search).has("pres")) {
+      const p = getRecentPosition();
+      if (p) setPosition(p);
+    }
+  }, [governorate.slug]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
@@ -44,10 +68,36 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
         if (!local) return p;
         const serverAt = p.reported_at ? Date.parse(p.reported_at) : Number.NEGATIVE_INFINITY;
         if (Date.parse(local.reported_at) <= serverAt) return p;
-        return { ...p, ...local };
+        // A fresh own report is one agreeing voice; prior counts no
+        // longer describe the new status.
+        return {
+          ...p,
+          ...local,
+          confirmations_24h: 1,
+          contradictions_24h: 0,
+          pharmacist_confirmed_24h: local.reported_by === "pharmacist",
+        };
       }),
     [pharmacies, localReports]
   );
+
+  const distances = useMemo(() => {
+    if (!position) return null;
+    return Object.fromEntries(merged.map((p) => [p.id, distanceKm(position, p)]));
+  }, [merged, position]);
+
+  const visible = useMemo(() => {
+    let list = dutyOnly ? merged.filter((p) => p.on_duty_until || p.is_24h) : merged;
+    if (distances) {
+      // Nearest pharmacy that HAS it first, then everything else by distance.
+      list = [...list].sort((a, b) => {
+        const aIn = a.status === "in_stock" ? 0 : 1;
+        const bIn = b.status === "in_stock" ? 0 : 1;
+        return aIn - bIn || distances[a.id] - distances[b.id];
+      });
+    }
+    return list;
+  }, [merged, dutyOnly, distances]);
 
   const summary = useMemo(
     () =>
@@ -71,7 +121,7 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
     }, REPORT_SLOW_AFTER_MS);
 
     try {
-      const created = await reportStock(medicationSlug, pharmacyId, status);
+      const created = await reportStock(medication.slug, pharmacyId, status);
       setLocalReports((s) => ({
         ...s,
         [pharmacyId]: {
@@ -81,10 +131,8 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
         },
       }));
       setReportUi((s) => ({ ...s, [pharmacyId]: { phase: "done", slow: false, status } }));
-      // Freshness is best-effort and must never block or undo the feedback
-      // the user has already been given.
       try {
-        await revalidateMedicationStock(medicationSlug);
+        await revalidateMedicationStock(medication.slug);
       } catch {
         /* ignore: the optimistic patch already shows the truth */
       }
@@ -107,27 +155,40 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
   return (
     <div className="flex flex-col gap-4">
       {hasReports ? (
-        <p className="text-sm text-ink tabular-nums">
-          {dict.stock.summary(summary.in_stock, merged.length)}
-        </p>
+        <AvailabilitySummary summary={summary} total={merged.length} governorateName={governorate.name_fr} />
       ) : (
         <NoticeCard tone="info" icon="report" title={dict.stock.noReportsAtAll}>
           {dict.stock.noReportsBody(merged.length)}
         </NoticeCard>
       )}
 
-      <ViewToggle view={view} onChange={setView} className="md:hidden" />
+      <NearbyControls
+        sorted={distances !== null}
+        onPosition={setPosition}
+        dutyOnly={dutyOnly}
+        onDutyOnlyChange={setDutyOnly}
+      />
+
+      <ViewToggle view={view} onChange={setView} className="sticky top-[4.5rem] z-[1050] shadow-raised md:hidden" />
       <StockLegend
         showVerified={merged.some((p) => p.verified)}
         footerNote={hasReports ? dict.report.invite : undefined}
       />
 
+      {dutyOnly && visible.length === 0 && (
+        <NoticeCard tone="info" icon="moon">
+          {dict.nearby.dutyEmpty}
+        </NoticeCard>
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
         <div
-          className={`${view === "list" ? "block animate-fade-in" : "hidden"} md:block md:w-2/5 md:max-h-[70vh] md:overflow-y-auto`}
+          className={`${view === "list" ? "block animate-fade-in" : "hidden"} md:block md:w-[42%] md:max-h-[calc(100dvh-7rem)] md:overflow-y-auto md:pr-1 md:[scrollbar-width:thin]`}
         >
           <StockPharmacyList
-            pharmacies={merged}
+            pharmacies={visible}
+            medication={medication}
+            distances={distances}
             selectedId={selectedId}
             onSelect={handleSelect}
             reportUi={reportUi}
@@ -137,13 +198,15 @@ export function StockResults({ pharmacies, medicationName, medicationSlug }: Sto
         </div>
 
         <div
-          className={`${view === "map" ? "block animate-fade-in" : "hidden"} md:block md:w-3/5 md:sticky md:top-4`}
+          className={`${view === "map" ? "block animate-fade-in" : "hidden"} md:block md:flex-1 md:sticky md:top-20`}
         >
           <StockMap
-            pharmacies={merged}
+            pharmacies={visible}
             selectedId={selectedId}
             isVisible={view === "map"}
-            medicationName={medicationName}
+            medicationName={medication.name}
+            center={[governorate.lat, governorate.lng]}
+            userPosition={position}
             reportUi={reportUi}
             onReport={handleReport}
             onResetReport={handleResetReport}

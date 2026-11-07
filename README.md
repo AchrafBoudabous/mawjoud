@@ -1,9 +1,21 @@
 # Mawjoud
 
-Mawjoud is a web app that lets people in Tunisia check whether a specific
-medication is currently available at nearby pharmacies, and lets
-pharmacists (and other patients) report stock status in real time. It is
-French-facing; this documentation is in English.
+Mawjoud is a web app that lets people anywhere in Tunisia check whether
+a specific medication is currently available at nearby pharmacies, and
+lets pharmacists (and other patients) report stock status in real time.
+It covers all 24 governorates, with pharmacies imported from
+OpenStreetMap. It is French-facing (with Arabic and Tunisian-Arabic
+search); this documentation is in English.
+
+Patient features: fuzzy French/Arabic/voice search, per-governorate
+results with "Près de moi" (distance computed on the device), a 24-hour
+confidence score per report, pharmacies de garde and night pharmacies,
+a "what to ask on the phone" script (French / Derja / Arabizi),
+shareable status cards, an installable offline-capable PWA, and a public
+shortage observatory with CSV export.
+
+Database setup, the OpenStreetMap import and the garde model are
+documented in [`supabase/README.md`](supabase/README.md).
 
 ## Stack
 

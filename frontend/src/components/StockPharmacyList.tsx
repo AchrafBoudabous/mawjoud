@@ -1,9 +1,12 @@
 import type { ReportUiState } from "@/components/StockReportButtons";
 import { StockPharmacyListItem } from "@/components/StockPharmacyListItem";
-import type { PatientReportStatus, PharmacyStock } from "@/lib/api";
+import type { Medication, PatientReportStatus, PharmacyStock } from "@/lib/api";
 
 type StockPharmacyListProps = {
   pharmacies: PharmacyStock[];
+  medication: Medication;
+  /** km per pharmacy id, when the user asked to sort by distance. */
+  distances: Record<string, number> | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   reportUi: Record<string, ReportUiState>;
@@ -13,6 +16,8 @@ type StockPharmacyListProps = {
 
 export function StockPharmacyList({
   pharmacies,
+  medication,
+  distances,
   selectedId,
   onSelect,
   reportUi,
@@ -25,6 +30,8 @@ export function StockPharmacyList({
         <StockPharmacyListItem
           key={pharmacy.id}
           pharmacy={pharmacy}
+          medication={medication}
+          distanceKm={distances?.[pharmacy.id] ?? null}
           isSelected={pharmacy.id === selectedId}
           onSelect={onSelect}
           reportState={reportUi[pharmacy.id]}

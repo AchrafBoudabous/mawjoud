@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BUTTON_BASE, BUTTON_PRIMARY, BUTTON_SECONDARY } from "@/lib/ui";
 import { getDictionary } from "@/lib/i18n";
@@ -25,7 +23,6 @@ export default function Error({
 
   return (
     <PageContainer width="wide">
-      <SiteHeader />
       <Disclaimer />
       <EmptyState
         headingLevel={1}
@@ -45,7 +42,6 @@ export default function Error({
           </div>
         }
       />
-      <SiteFooter />
     </PageContainer>
   );
 }

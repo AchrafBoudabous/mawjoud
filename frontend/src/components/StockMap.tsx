@@ -4,6 +4,7 @@ import type { MapMarker } from "@/components/MapView";
 import { MapView } from "@/components/MapView";
 import type { ReportUiState } from "@/components/StockReportButtons";
 import { REPORT_UI_IDLE, StockReportButtons } from "@/components/StockReportButtons";
+import { DutyBadge } from "@/components/DutyBadge";
 import { StockReportTime } from "@/components/StockReportTime";
 import { StockStatusBadge } from "@/components/StockStatusBadge";
 import { PhoneLink } from "@/components/ui/PhoneLink";
@@ -17,6 +18,8 @@ type StockMapProps = {
   selectedId: string | null;
   isVisible: boolean;
   medicationName: string;
+  center: [number, number];
+  userPosition: { lat: number; lng: number } | null;
   reportUi: Record<string, ReportUiState>;
   onReport: (pharmacyId: string, status: PatientReportStatus) => void;
   onResetReport: (pharmacyId: string) => void;
@@ -27,6 +30,8 @@ export function StockMap({
   selectedId,
   isVisible,
   medicationName,
+  center,
+  userPosition,
   reportUi,
   onReport,
   onResetReport,
@@ -41,10 +46,11 @@ export function StockMap({
     popup: (
       <div className="mawjoud-popup flex w-full flex-col gap-2">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-ink">{p.name}</p>
+          <p dir="auto" className="text-sm font-semibold text-ink">{p.name}</p>
           <div className="flex flex-wrap items-center gap-1.5">
             <StockStatusBadge status={p.status} />
             {p.verified && <VerifiedBadge />}
+            <DutyBadge onDutyUntil={p.on_duty_until} is24h={p.is_24h} />
           </div>
         </div>
         {p.status !== "none" && p.reported_at && (
@@ -69,6 +75,8 @@ export function StockMap({
       markers={markers}
       selectedId={selectedId}
       isVisible={isVisible}
+      center={center}
+      userPosition={userPosition}
       ariaLabel={dict.stock.mapAriaLabel(medicationName)}
     />
   );

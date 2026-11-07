@@ -5,6 +5,7 @@ import type { ToggleUiState } from "@/components/StockToggle";
 import { StockToggle } from "@/components/StockToggle";
 import type { DashboardMedication, StockStatus } from "@/lib/api";
 import { getDictionary } from "@/lib/i18n";
+import { Icon } from "@/components/ui/Icon";
 import { CARD } from "@/lib/ui";
 
 type PharmacistMedicationRowProps = {
@@ -24,7 +25,7 @@ export function PharmacistMedicationRow({
 
   return (
     <li className={`${CARD} p-4`}>
-      <h4 className="font-medium text-ink">{medication.name}</h4>
+      <h4 className="font-bold text-ink">{medication.name}</h4>
       <p className="text-sm text-muted">
         {medication.generic_name}
         {medication.form ? ` · ${medication.form}` : ""}
@@ -51,12 +52,14 @@ export function PharmacistMedicationRow({
         onSelect={(status) => onToggle(medication, status)}
       />
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-        <span title={dict.pharmacist.dashboard.searchCountHint} className="tabular-nums">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-xs text-muted">
+        <span title={dict.pharmacist.dashboard.searchCountHint} className="inline-flex items-center gap-1.5 tabular-nums">
+          <Icon name="users" className="size-3.5" />
           {dict.pharmacist.dashboard.searchCount(medication.searches_last_7_days)}
         </span>
-        <Link href={`/medicaments/${medication.slug}`} className="text-brand-700 underline decoration-1 underline-offset-4 transition-colors duration-150 ease-standard hover:text-brand-800">
+        <Link href={`/medicaments/${medication.slug}`} className="inline-flex items-center gap-1 font-semibold text-brand-700 transition-colors duration-150 ease-standard hover:text-brand-800">
           {dict.pharmacist.dashboard.viewPublicPage}
+          <Icon name="arrow-right" className="size-3.5" />
         </Link>
       </div>
     </li>

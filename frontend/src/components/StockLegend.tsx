@@ -31,7 +31,7 @@ export function StockLegend({ showVerified = false, footerNote }: StockLegendPro
         aria-expanded={open}
         aria-controls="stock-legend-body"
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 w-full items-center justify-between gap-3 px-4 text-sm font-semibold text-ink md:hidden"
+        className="flex min-h-11 w-full items-center justify-between gap-3 px-4 text-sm font-semibold text-ink"
       >
         {dict.stock.legendTitle}
         <Icon
@@ -39,10 +39,7 @@ export function StockLegend({ showVerified = false, footerNote }: StockLegendPro
           className={`size-4 shrink-0 transition-transform duration-150 ease-standard ${open ? "rotate-180" : ""}`}
         />
       </button>
-      <h2 className="hidden px-4 pt-4 text-sm font-semibold text-ink md:block">
-        {dict.stock.legendTitle}
-      </h2>
-      <div id="stock-legend-body" className={`${open ? "block" : "hidden"} px-4 pb-4 md:block`}>
+      <div id="stock-legend-body" className={`${open ? "block" : "hidden"} px-4 pb-4`}>
         <ul className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
           {STOCK_STATUSES.map((status) => (
             <li key={status} className="flex items-center gap-2">

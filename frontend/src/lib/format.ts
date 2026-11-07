@@ -85,3 +85,27 @@ export function isStaleReport(iso: string, now: number): boolean {
   const diffHours = (now - then) / (1000 * 60 * 60);
   return diffHours > STALE_AFTER_HOURS;
 }
+
+/** "20:00" in Tunis time. */
+export function formatTunisTime(iso: string): string {
+  const { hours, minutes } = toTunisParts(iso);
+  return `${pad2(hours)}:${pad2(minutes)}`;
+}
+
+/** "14/08" in Tunis time. */
+export function formatTunisDayMonth(iso: string): string {
+  const { day, month } = toTunisParts(iso);
+  return `${pad2(day)}/${pad2(month)}`;
+}
+
+/** Date + time typed by a pharmacist (always Tunis wall-clock time) ->
+ *  an ISO string with an explicit +01:00 offset, which the API requires. */
+export function tunisLocalToIso(date: string, time: string): string {
+  return `${date}T${time}:00+01:00`;
+}
+
+/** Today's date in Tunis as YYYY-MM-DD (for <input type="date">). */
+export function tunisToday(now: number = Date.now(), addDays = 0): string {
+  const d = new Date(now + TUNIS_UTC_OFFSET_MINUTES * 60_000 + addDays * 86_400_000);
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+}

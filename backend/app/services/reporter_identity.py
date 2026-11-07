@@ -28,7 +28,16 @@ def resolve_client_ip(request: Request) -> tuple[str | None, str]:
                 return candidate, header_name
         logger.warning("configured client ip header %s missing", header_name)
     if request.client and request.client.host:
-        return request.client.host, "socket"
+        # Validate the socket peer too: a non-IP peer (unix socket, some
+        # test transports) used to reach fingerprint_ip() and raise a
+        # ValueError -> unhandled 500 instead of the endpoint's own
+        # fail-closed / fail-open handling.
+        try:
+            ipaddress.ip_address(request.client.host)
+        except ValueError:
+            logger.warning("socket peer address is not an IP address")
+        else:
+            return request.client.host, "socket"
     return None, "unavailable"
 
 

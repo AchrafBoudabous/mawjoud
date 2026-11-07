@@ -11,7 +11,10 @@ from app.schemas.medication import (
     MedicationMatch,
     MedicationSearchResponse,
 )
+from app.schemas.pharmacy import GOVERNORATE_SLUG_PATTERN, Governorate
 from app.schemas.stock import (
+    GovernorateAvailability,
+    MedicationAvailabilityResponse,
     MedicationStockResponse,
     PharmacyStock,
     StockReportCreate,
@@ -30,6 +33,13 @@ from app.supabase_client import get_supabase
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/medications", tags=["medications"])
+
+# Sent by frontend/src/lib/api.ts on every write. Not a secret — its only
+# job is to make the request non-"simple" so the browser must preflight.
+CLIENT_MARKER_HEADER = "x-mawjoud-client"
+CLIENT_MARKER_VALUE = "web"
+
+SLUG_PATTERN = r"^[a-z0-9]+(-[a-z0-9]+)*$"
 
 
 @router.get("", response_model=MedicationListResponse)
@@ -98,20 +108,27 @@ def search_medications(
 def log_medication_view(
     request: Request,
     response: Response,
-    slug: str = Path(..., min_length=1, max_length=80, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$"),
+    slug: str = Path(..., min_length=1, max_length=80, pattern=SLUG_PATTERN),
+    governorate: str | None = Query(None, max_length=40, pattern=GOVERNORATE_SLUG_PATTERN),
 ) -> Response:
-    """Records one patient opening `/medicaments/<slug>`. Backs the
-    pharmacist dashboard's "N recherches cette semaine" counter -- see
-    docs/ARCHITECTURE.md 5.6 for why this is the only correct place to
-    count a "search" (the cached search/results endpoints would count
-    keystrokes and cache misses, not people).
+    """Records one patient opening a medication page (optionally for a
+    governorate). Backs the pharmacist dashboard's "N recherches près de
+    chez vous" counter -- see docs/ARCHITECTURE.md 5.6 for why this is
+    the only correct place to count a "search".
 
     Unlike every other write in this project, this endpoint FAILS OPEN:
     a metric must never break a patient's page. No body, no 404 for an
-    unknown slug -- a probe learns nothing and the caller has nothing to
-    do with the answer either way.
+    unknown slug or governorate -- a probe learns nothing.
     """
     response.headers["Cache-Control"] = "no-store"
+
+    # A bodyless POST is a CORS "simple request": browsers send it
+    # cross-site WITHOUT a preflight, so any website on the internet could
+    # make its visitors' browsers inflate these counters from thousands of
+    # real IPs. Requiring a custom header forces a preflight, which only
+    # ALLOWED_ORIGINS pass. Silently 204 (fail open) rather than 4xx.
+    if request.headers.get(CLIENT_MARKER_HEADER) != CLIENT_MARKER_VALUE:
+        return Response(status_code=204)
 
     ip, source = resolve_client_ip(request)
     if ip is None:
@@ -122,13 +139,12 @@ def log_medication_view(
 
     try:
         get_supabase().rpc(
-            "log_medication_view", {"p_slug": slug, "p_fingerprint": fingerprint}
+            "log_medication_view",
+            {"p_slug": slug, "p_fingerprint": fingerprint, "p_governorate": governorate},
         ).execute()
     except Exception:
         logger.exception("failed to log medication view for slug=%s", slug)
-        raise HTTPException(
-            status_code=503, detail="view logging temporarily unavailable"
-        )
+        raise HTTPException(status_code=503, detail="view logging temporarily unavailable")
 
     return Response(status_code=204)
 
@@ -136,26 +152,19 @@ def log_medication_view(
 _STATUS_PRIORITY = {"in_stock": 0, "unsure": 1, "none": 2, "out_of_stock": 3}
 
 
-def _sort_key(row: PharmacyStock) -> tuple[int, float, str]:
-    # Freshest first inside a status group; rows with no report sort last
-    # within their group. `-inf` -> `+inf` after negation.
+def _sort_key(row: PharmacyStock) -> tuple[int, int, float, str]:
+    # In stock first; inside a status group, on-duty pharmacies first,
+    # then freshest report; rows with no report sort last in their group.
     reported = row.reported_at.timestamp() if row.reported_at else float("-inf")
-    return (_STATUS_PRIORITY[row.status], -reported, row.name)
+    on_duty = 0 if (row.on_duty_until or row.is_24h) else 1
+    return (_STATUS_PRIORITY[row.status], on_duty, -reported, row.name)
 
 
-@router.get("/{slug}/pharmacies", response_model=MedicationStockResponse)
-def get_medication_stock(
-    response: Response,
-    slug: str = Path(..., min_length=1, max_length=80, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$"),
-) -> MedicationStockResponse:
-    """The results endpoint: the medication plus every pharmacy annotated
-    with its current status. Two queries, deliberately — slug resolution is
-    the sole 404 authority, so "unknown slug" and "no pharmacies in the
-    database" are never conflated (see docs/ARCHITECTURE.md, step 3,
-    section 3.6).
-    """
+def _resolve_medication(slug: str, unavailable_detail: str) -> Medication:
+    """Slug resolution is the sole 404 authority, so "unknown slug" and
+    "no pharmacies" are never conflated (ARCHITECTURE.md 3.6)."""
     try:
-        med_result = (
+        rows = (
             get_supabase()
             .table("medications")
             .select("id,slug,name,generic_name,form,category")
@@ -163,36 +172,63 @@ def get_medication_stock(
             .eq("is_active", True)
             .limit(1)
             .execute()
-        )
+        ).data
     except Exception:
         logger.exception("Failed to resolve medication slug from Supabase")
-        raise HTTPException(
-            status_code=503,
-            detail="stock information temporarily unavailable",
-        )
-
-    if not med_result.data:
+        raise HTTPException(status_code=503, detail=unavailable_detail)
+    if not rows:
         raise HTTPException(status_code=404, detail="medication not found")
+    return Medication(**rows[0])
 
-    medication = Medication(**med_result.data[0])
+
+def _resolve_governorate(slug: str, unavailable_detail: str) -> Governorate:
+    try:
+        rows = (
+            get_supabase()
+            .table("governorate_overview")
+            .select("slug,iso_code,name_fr,name_ar,lat,lng,pharmacy_count")
+            .eq("slug", slug)
+            .limit(1)
+            .execute()
+        ).data
+    except Exception:
+        logger.exception("Failed to resolve governorate from Supabase")
+        raise HTTPException(status_code=503, detail=unavailable_detail)
+    if not rows:
+        raise HTTPException(status_code=404, detail="governorate not found")
+    return Governorate(**rows[0])
+
+
+@router.get("/{slug}/pharmacies", response_model=MedicationStockResponse)
+def get_medication_stock(
+    response: Response,
+    slug: str = Path(..., min_length=1, max_length=80, pattern=SLUG_PATTERN),
+    governorate: str = Query(..., min_length=2, max_length=40, pattern=GOVERNORATE_SLUG_PATTERN),
+) -> MedicationStockResponse:
+    """The results endpoint: the medication plus every pharmacy of ONE
+    governorate annotated with its current status, 24 h confidence and
+    garde. The governorate is required — see list_pharmacies."""
+    detail = "stock information temporarily unavailable"
+    medication = _resolve_medication(slug, detail)
+    gov = _resolve_governorate(governorate, detail)
 
     try:
         rows = (
             get_supabase()
             .table("pharmacy_medication_status")
             .select(
-                "pharmacy_id,pharmacy_name,address,city,governorate,"
-                "lat,lng,phone,verified,status,reported_at,reported_by"
+                "pharmacy_id,pharmacy_name,address,city,governorate,governorate_slug,"
+                "lat,lng,phone,verified,is_24h,on_duty_until,status,reported_at,reported_by,"
+                "confirmations_24h,contradictions_24h,pharmacist_confirmed_24h"
             )
             .eq("medication_id", str(medication.id))
+            .eq("governorate_slug", gov.slug)
+            .eq("pharmacy_is_public", True)
             .execute()
         ).data
     except Exception:
         logger.exception("Failed to fetch stock status from Supabase")
-        raise HTTPException(
-            status_code=503,
-            detail="stock information temporarily unavailable",
-        )
+        raise HTTPException(status_code=503, detail=detail)
 
     pharmacies = [
         PharmacyStock(
@@ -201,17 +237,22 @@ def get_medication_stock(
             address=row["address"],
             city=row["city"],
             governorate=row["governorate"],
+            governorate_slug=row["governorate_slug"],
             lat=row["lat"],
             lng=row["lng"],
             phone=row["phone"],
             verified=row["verified"],
+            is_24h=row["is_24h"],
+            on_duty_until=row["on_duty_until"],
             status=row["status"],
             reported_at=row["reported_at"],
             reported_by=row["reported_by"],
+            confirmations_24h=row["confirmations_24h"],
+            contradictions_24h=row["contradictions_24h"],
+            pharmacist_confirmed_24h=row["pharmacist_confirmed_24h"],
         )
         for row in rows
     ]
-
     pharmacies.sort(key=_sort_key)
 
     counts = Counter(p.status for p in pharmacies)
@@ -223,12 +264,77 @@ def get_medication_stock(
     )
 
     response.headers["Cache-Control"] = "public, max-age=60"
-
     return MedicationStockResponse(
         medication=medication,
+        governorate=gov,
         pharmacies=pharmacies,
         count=len(pharmacies),
         summary=summary,
+    )
+
+
+AVAILABILITY_MAX_AGE_DAYS = 14
+
+
+@router.get("/{slug}/availability", response_model=MedicationAvailabilityResponse)
+def get_medication_availability(
+    response: Response,
+    slug: str = Path(..., min_length=1, max_length=80, pattern=SLUG_PATTERN),
+) -> MedicationAvailabilityResponse:
+    """National overview for one medication: per governorate, how many
+    pharmacies' latest report (last 14 days) says in stock / out / unsure.
+    Reads only stock_reports — never the medications x pharmacies view."""
+    detail = "availability temporarily unavailable"
+    medication = _resolve_medication(slug, detail)
+    supabase = get_supabase()
+    try:
+        govs = (
+            supabase.table("governorate_overview")
+            .select("slug,name_fr,name_ar,pharmacy_count,sort_order")
+            .order("sort_order")
+            .execute()
+        ).data
+        stats = (
+            supabase.rpc(
+                "availability_by_governorate",
+                {"p_medication_id": str(medication.id), "p_max_age_days": AVAILABILITY_MAX_AGE_DAYS},
+            ).execute()
+        ).data
+    except Exception:
+        logger.exception("Failed to fetch national availability from Supabase")
+        raise HTTPException(status_code=503, detail=detail)
+
+    by_gov = {row["governorate_slug"]: row for row in stats}
+    governorates = []
+    for g in govs:
+        s = by_gov.get(g["slug"], {})
+        governorates.append(
+            GovernorateAvailability(
+                slug=g["slug"],
+                name_fr=g["name_fr"],
+                name_ar=g["name_ar"],
+                pharmacy_count=g["pharmacy_count"],
+                in_stock=s.get("in_stock", 0),
+                out_of_stock=s.get("out_of_stock", 0),
+                unsure=s.get("unsure", 0),
+                last_report_at=s.get("last_report_at"),
+            )
+        )
+
+    in_stock = sum(g.in_stock for g in governorates)
+    out = sum(g.out_of_stock for g in governorates)
+    unsure = sum(g.unsure for g in governorates)
+    total = sum(g.pharmacy_count for g in governorates)
+    totals = StockSummary(
+        in_stock=in_stock, out_of_stock=out, unsure=unsure, none=max(total - in_stock - out - unsure, 0)
+    )
+
+    response.headers["Cache-Control"] = "public, max-age=120"
+    return MedicationAvailabilityResponse(
+        medication=medication,
+        governorates=governorates,
+        totals=totals,
+        max_age_days=AVAILABILITY_MAX_AGE_DAYS,
     )
 
 
@@ -258,7 +364,7 @@ def create_stock_report(
     request: Request,
     response: Response,
     body: StockReportCreate,
-    slug: str = Path(..., min_length=1, max_length=80, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$"),
+    slug: str = Path(..., min_length=1, max_length=80, pattern=SLUG_PATTERN),
     pharmacy_id: UUID = Path(...),
 ) -> StockReportCreated:
     """The public (no-auth) write path: a patient reports what they found
@@ -297,6 +403,7 @@ def create_stock_report(
             .table("pharmacies")
             .select("id")
             .eq("id", str(pharmacy_id))
+            .eq("is_public", True)
             .limit(1)
             .execute()
         )

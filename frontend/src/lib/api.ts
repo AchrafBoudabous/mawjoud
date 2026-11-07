@@ -22,16 +22,34 @@ export type DbHealthResponse =
 export type Pharmacy = {
   id: string;
   name: string;
+  name_ar?: string | null;
   address: string;
   city: string;
   governorate: string;
+  governorate_slug: string;
   lat: number;
   lng: number;
   phone: string | null;
   verified: boolean;
+  /** Open all night (24/7 or a "pharmacie de nuit"). */
+  is_24h: boolean;
+  /** Set while a declared garde is in progress: when it ends. */
+  on_duty_until: string | null;
 };
 
-export type PharmacyListResponse = { pharmacies: Pharmacy[]; count: number };
+export type PharmacyListResponse = { pharmacies: Pharmacy[]; count: number; governorate: string | null };
+
+export type Governorate = {
+  slug: string;
+  iso_code: string;
+  name_fr: string;
+  name_ar: string;
+  lat: number;
+  lng: number;
+  pharmacy_count: number;
+};
+
+export type GovernorateListResponse = { governorates: Governorate[]; count: number };
 
 export type MedicationCategory = "thyroid" | "insulin" | "psychiatric" | "cancer_pain";
 export type StockStatus = "in_stock" | "out_of_stock" | "unsure";
@@ -59,6 +77,10 @@ export type PharmacyStock = Pharmacy & {
   status: StockStatusView;
   reported_at: string | null; // ISO 8601 with offset
   reported_by: ReportSource | null;
+  /** Distinct reporters in the last 24 h agreeing / disagreeing. */
+  confirmations_24h: number;
+  contradictions_24h: number;
+  pharmacist_confirmed_24h: boolean;
 };
 export type StockSummary = {
   in_stock: number;
@@ -68,18 +90,73 @@ export type StockSummary = {
 };
 export type MedicationStockResponse = {
   medication: Medication;
+  governorate: Governorate;
   pharmacies: PharmacyStock[];
   count: number;
   summary: StockSummary;
 };
 
+export type GovernorateAvailability = {
+  slug: string;
+  name_fr: string;
+  name_ar: string;
+  pharmacy_count: number;
+  in_stock: number;
+  out_of_stock: number;
+  unsure: number;
+  last_report_at: string | null;
+};
+
+export type MedicationAvailabilityResponse = {
+  medication: Medication;
+  governorates: GovernorateAvailability[];
+  totals: StockSummary;
+  max_age_days: number;
+};
+
+export type ObservatoryWeek = {
+  week_start: string; // YYYY-MM-DD, Monday
+  in_stock_reports: number;
+  out_of_stock_reports: number;
+  viewers: number;
+};
+
+export type ObservatoryMedication = {
+  medication: Medication;
+  in_stock_pharmacies: number;
+  out_of_stock_pharmacies: number;
+  unsure_pharmacies: number;
+  governorates_reporting: number;
+  weeks: ObservatoryWeek[];
+};
+
+export type ObservatoryResponse = {
+  generated_at: string;
+  weeks: number;
+  max_age_days: number;
+  medications: ObservatoryMedication[];
+};
+
 export class ApiError extends Error {
   readonly status: number;
+  /** The API's `detail` string when it sent one (e.g. "pharmacy already
+   *  has an account"), so callers can tell two 409s apart. */
+  readonly detail: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, detail: string | null = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.detail = detail;
+  }
+}
+
+async function readDetail(response: Response): Promise<string | null> {
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    return typeof body.detail === "string" ? body.detail : null;
+  } catch {
+    return null;
   }
 }
 
@@ -105,7 +182,7 @@ type FetchOptions = {
    *  cold-start timeout. */
   signal?: AbortSignal;
   /** Defaults to "GET". */
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "DELETE";
   /** JSON-serialised when present. */
   body?: unknown;
   /** A pharmacist's Supabase access token. When present, sets
@@ -122,12 +199,15 @@ async function fetchJson<T>(path: string, options: FetchOptions = {}): Promise<T
     method,
     ...(accessToken !== undefined
       ? { cache: "no-store" as const }
-      : method === "POST"
+      : method !== "GET"
         ? { cache: "no-store" as const }
         : revalidate !== undefined
           ? { next: { revalidate, ...(tags ? { tags } : {}) } }
           : { cache: "no-store" as const }),
     headers: {
+      // Forces a CORS preflight on every write, so only ALLOWED_ORIGINS
+      // can make a browser send one (see backend routers/medications.py).
+      ...(method !== "GET" ? { "X-Mawjoud-Client": "web" } : {}),
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(accessToken !== undefined ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
@@ -140,7 +220,8 @@ async function fetchJson<T>(path: string, options: FetchOptions = {}): Promise<T
   if (!response.ok) {
     throw new ApiError(
       response.status,
-      `Request to ${path} failed with status ${response.status}`
+      `Request to ${path} failed with status ${response.status}`,
+      await readDetail(response)
     );
   }
 
@@ -158,6 +239,10 @@ export function medicationStockTag(slug: string): string {
   return `medication-stock:${slug}`;
 }
 
+export function getApiBaseUrlOrNull(): string | null {
+  return API_BASE_URL ?? null;
+}
+
 export function getApiHealth(): Promise<HealthResponse> {
   return fetchJson<HealthResponse>("/health");
 }
@@ -166,8 +251,20 @@ export function getDbHealth(): Promise<DbHealthResponse> {
   return fetchJson<DbHealthResponse>("/health/db");
 }
 
-export function getPharmacies(): Promise<PharmacyListResponse> {
-  return fetchJson<PharmacyListResponse>("/api/pharmacies", { revalidate: 300 });
+export function getGovernorates(): Promise<GovernorateListResponse> {
+  return fetchJson<GovernorateListResponse>("/api/governorates", { revalidate: 3600 });
+}
+
+export function getPharmacies(
+  governorate: string,
+  options: { onDuty?: boolean; signal?: AbortSignal } = {}
+): Promise<PharmacyListResponse> {
+  const params = new URLSearchParams({ governorate });
+  if (options.onDuty) params.set("on_duty", "true");
+  return fetchJson<PharmacyListResponse>(`/api/pharmacies?${params}`, {
+    revalidate: 120,
+    signal: options.signal,
+  });
 }
 
 export function getMedications(): Promise<MedicationListResponse> {
@@ -184,11 +281,30 @@ export function searchMedications(
   );
 }
 
-export function getMedicationStock(slug: string): Promise<MedicationStockResponse> {
+export function getMedicationStock(
+  slug: string,
+  governorate: string
+): Promise<MedicationStockResponse> {
   return fetchJson<MedicationStockResponse>(
-    `/api/medications/${encodeURIComponent(slug)}/pharmacies`,
+    `/api/medications/${encodeURIComponent(slug)}/pharmacies?governorate=${encodeURIComponent(governorate)}`,
     { revalidate: 60, tags: [medicationStockTag(slug)] }
   );
+}
+
+export function getMedicationAvailability(slug: string): Promise<MedicationAvailabilityResponse> {
+  return fetchJson<MedicationAvailabilityResponse>(
+    `/api/medications/${encodeURIComponent(slug)}/availability`,
+    { revalidate: 120, tags: [medicationStockTag(slug)] }
+  );
+}
+
+export function getObservatory(weeks = 12): Promise<ObservatoryResponse> {
+  return fetchJson<ObservatoryResponse>(`/api/observatory?weeks=${weeks}`, { revalidate: 600 });
+}
+
+export function observatoryCsvUrl(weeks = 12): string | null {
+  const base = getApiBaseUrlOrNull();
+  return base ? `${base}/api/observatory/export.csv?weeks=${weeks}` : null;
 }
 
 export type PatientReportStatus = "in_stock" | "out_of_stock";
@@ -227,6 +343,8 @@ export type PharmacistAccount = {
   full_name: string;
   status: PharmacistAccountStatus;
   created_at: string;
+  /** Admin's reason, present when rejected or suspended. */
+  review_note: string | null;
 };
 
 export type PharmacistPharmacy = {
@@ -235,8 +353,19 @@ export type PharmacistPharmacy = {
   address: string;
   city: string;
   governorate: string;
+  governorate_slug: string;
   phone: string | null;
   verified: boolean;
+  is_24h: boolean;
+};
+
+export type DutyKind = "night" | "weekend" | "holiday";
+
+export type DutyShift = {
+  id: string;
+  kind: DutyKind;
+  starts_at: string;
+  ends_at: string;
 };
 
 export type DashboardMedication = Medication & {
@@ -252,13 +381,28 @@ export type PharmacistDashboardResponse = {
   medications: DashboardMedication[];
   count: number;
   stats_window_days: number;
+  stats_governorate: string;
+  duty_shifts: DutyShift[];
+};
+
+export type NewPharmacyProposal = {
+  name: string;
+  address: string;
+  city: string;
+  governorate_slug: string;
+  lat: number;
+  lng: number;
+  phone: string | null;
 };
 
 export type PharmacistRegistrationInput = {
-  pharmacy_id: string;
+  /** Exactly one of pharmacy_id / new_pharmacy. */
+  pharmacy_id: string | null;
+  new_pharmacy: NewPharmacyProposal | null;
   email: string;
   full_name: string;
   phone: string;
+  certificate: File;
 };
 
 export type PharmacistRegistrationCreated = {
@@ -268,6 +412,7 @@ export type PharmacistRegistrationCreated = {
   status: PharmacistAccountStatus;
   pharmacy_id: string;
   pharmacy_name: string;
+  new_pharmacy: boolean;
 };
 
 export type PharmacistReportCreated = {
@@ -280,13 +425,103 @@ export type PharmacistReportCreated = {
   reported_by: ReportSource;
 };
 
-export function registerPharmacist(
+/** Multipart: the certificate travels with the form. The browser sets
+ *  the multipart Content-Type (with its boundary) itself. */
+export async function registerPharmacist(
   input: PharmacistRegistrationInput
 ): Promise<PharmacistRegistrationCreated> {
-  return fetchJson<PharmacistRegistrationCreated>("/api/pharmacist/registrations", {
+  const form = new FormData();
+  form.set("email", input.email);
+  form.set("full_name", input.full_name);
+  form.set("phone", input.phone);
+  if (input.pharmacy_id) form.set("pharmacy_id", input.pharmacy_id);
+  if (input.new_pharmacy) form.set("new_pharmacy", JSON.stringify(input.new_pharmacy));
+  form.set("certificate", input.certificate);
+
+  const response = await fetch(`${getApiBaseUrl()}/api/pharmacist/registrations`, {
     method: "POST",
-    body: input,
-    timeoutMs: 60_000,
+    cache: "no-store",
+    headers: { "X-Mawjoud-Client": "web" },
+    body: form,
+    signal: AbortSignal.timeout(90_000),
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, `Registration failed with status ${response.status}`, await readDetail(response));
+  }
+  return (await response.json()) as PharmacistRegistrationCreated;
+}
+
+// ---------------------------------------------------------------------
+// Admin review
+// ---------------------------------------------------------------------
+
+export type AdminRegistrationStatus = PharmacistAccountStatus | "all";
+export type AdminAction = "approve" | "reject" | "suspend" | "reactivate";
+
+export type AdminRegistration = {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  status: PharmacistAccountStatus;
+  created_at: string;
+  reviewed_at: string | null;
+  review_note: string | null;
+  has_certificate: boolean;
+  certificate_content_type: string | null;
+  certificate_uploaded_at: string | null;
+  new_pharmacy: boolean;
+  pharmacy: {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    governorate: string;
+    governorate_slug: string | null;
+    lat: number;
+    lng: number;
+    phone: string | null;
+    is_public: boolean;
+    source: string;
+    verified: boolean;
+  };
+};
+
+export function getAdminMe(accessToken: string): Promise<{ email: string }> {
+  return fetchJson<{ email: string }>("/api/admin/me", { accessToken, timeoutMs: 60_000 });
+}
+
+export function getAdminRegistrations(
+  status: AdminRegistrationStatus,
+  accessToken: string
+): Promise<{ registrations: AdminRegistration[]; count: number }> {
+  return fetchJson(`/api/admin/registrations?status=${status}`, { accessToken, timeoutMs: 60_000 });
+}
+
+export function getCertificateLink(
+  id: string,
+  accessToken: string
+): Promise<{ url: string; content_type: string | null; expires_in: number }> {
+  return fetchJson(`/api/admin/registrations/${encodeURIComponent(id)}/certificate`, { accessToken });
+}
+
+export function decideRegistration(
+  id: string,
+  action: AdminAction,
+  note: string | null,
+  accessToken: string
+): Promise<AdminRegistration> {
+  return fetchJson<AdminRegistration>(`/api/admin/registrations/${encodeURIComponent(id)}/decision`, {
+    method: "POST",
+    body: { action, note },
+    accessToken,
+  });
+}
+
+export function deleteRegistration(id: string, accessToken: string): Promise<void> {
+  return fetchJson<void>(`/api/admin/registrations/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    accessToken,
   });
 }
 
@@ -314,9 +549,30 @@ export function reportStockAsPharmacist(
  *  ignores the result — see SearchEventLogger. Uses a short 15 s timeout
  *  because nothing waits on it and a hung request on a hot page is pure
  *  waste. */
-export function logMedicationView(slug: string): Promise<void> {
-  return fetchJson<void>(`/api/medications/${encodeURIComponent(slug)}/views`, {
+export function logMedicationView(slug: string, governorate?: string): Promise<void> {
+  const query = governorate ? `?governorate=${encodeURIComponent(governorate)}` : "";
+  return fetchJson<void>(`/api/medications/${encodeURIComponent(slug)}/views${query}`, {
     method: "POST",
     timeoutMs: 15_000,
+  });
+}
+
+export function createDutyShift(
+  input: { kind: DutyKind; starts_at: string; ends_at: string },
+  accessToken: string
+): Promise<DutyShift> {
+  return fetchJson<DutyShift>("/api/pharmacist/duty-shifts", {
+    method: "POST",
+    body: input,
+    accessToken,
+    timeoutMs: 60_000,
+  });
+}
+
+export function deleteDutyShift(id: string, accessToken: string): Promise<void> {
+  return fetchJson<void>(`/api/pharmacist/duty-shifts/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    accessToken,
+    timeoutMs: 60_000,
   });
 }

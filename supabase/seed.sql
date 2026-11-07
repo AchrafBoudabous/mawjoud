@@ -1,4 +1,8 @@
 -- supabase/seed.sql
+-- Real pharmacies for all of Tunisia come from OpenStreetMap: see
+-- scripts/import_osm_pharmacies.py and supabase/seed_osm_pharmacies.sql.
+-- The 12 rows below are flagged source = 'demo' and are retired by that
+-- import (unless a pharmacist account is attached to one).
 -- DEMO DATA. Real Bizerte streets/localities, but the pharmacies, phone
 -- numbers and coordinates are approximate/fictional placeholders for
 -- development. Every row is verified = false. Replace with sourced,
@@ -6,20 +10,20 @@
 -- Idempotent: safe to re-run.
 
 insert into public.pharmacies
-  (id, name, address, city, governorate, lat, lng, phone, verified)
+  (id, name, address, city, governorate, lat, lng, phone, verified, governorate_slug, source)
 values
-  ('00000000-0000-4000-8000-000000000001', 'Pharmacie du Vieux Port',        '12 Quai Tarak Ibn Ziad, Vieux Port',            'Bizerte',              'Bizerte', 37.278900, 9.871300, '+21672431210', false),
-  ('00000000-0000-4000-8000-000000000002', 'Pharmacie Habib Bourguiba',      '34 Avenue Habib Bourguiba',                     'Bizerte',              'Bizerte', 37.274600, 9.873700, '+21672431455', false),
-  ('00000000-0000-4000-8000-000000000003', 'Pharmacie de la Corniche',       'Route de la Corniche, face au Jardin Public',   'Bizerte',              'Bizerte', 37.283500, 9.864100, '+21672432880', false),
-  ('00000000-0000-4000-8000-000000000004', 'Pharmacie El Andalous',          '8 Rue d''Espagne',                              'Bizerte',              'Bizerte', 37.276100, 9.872200, '+21672433117', false),
-  ('00000000-0000-4000-8000-000000000005', 'Pharmacie Ben Ammar',            '21 Avenue d''Algérie',                          'Bizerte',              'Bizerte', 37.273800, 9.870900, '+21672434502', false),
-  ('00000000-0000-4000-8000-000000000006', 'Pharmacie Bab Mateur',           'Avenue Taieb Mhiri, Bab Mateur',                'Bizerte',              'Bizerte', 37.272200, 9.861700, '+21672435940', false),
-  ('00000000-0000-4000-8000-000000000007', 'Pharmacie Ennour',               'Cité Bougatfa 2, Rue de l''Environnement',      'Bizerte',              'Bizerte', 37.266500, 9.860400, '+21672436773', false),
-  ('00000000-0000-4000-8000-000000000008', 'Pharmacie Ibn Khaldoun',         '5 Rue Ibn Khaldoun, Centre-ville',              'Bizerte',              'Bizerte', 37.275400, 9.868800, '+21672437264', false),
-  ('00000000-0000-4000-8000-000000000009', 'Pharmacie Zarzouna Centre',      'Avenue de la République, Zarzouna',             'Zarzouna',             'Bizerte', 37.254700, 9.876800, '+21672590214', false),
-  ('00000000-0000-4000-8000-000000000010', 'Pharmacie Sidi Salem',           'Route de Sidi Salem, Zarzouna',                 'Zarzouna',             'Bizerte', 37.258800, 9.898100, '+21672591386', false),
-  ('00000000-0000-4000-8000-000000000011', 'Pharmacie Sidi Ahmed',           'Avenue de l''Indépendance, Sidi Ahmed',         'Bizerte',              'Bizerte', 37.250400, 9.833400, '+21672592470', false),
-  ('00000000-0000-4000-8000-000000000012', 'Pharmacie Menzel Jemil',         'Avenue Habib Bourguiba, Menzel Jemil',          'Menzel Jemil',         'Bizerte', 37.237100, 9.914500, '+21672491638', false)
+  ('00000000-0000-4000-8000-000000000001', 'Pharmacie du Vieux Port',        '12 Quai Tarak Ibn Ziad, Vieux Port',            'Bizerte',              'Bizerte', 37.278900, 9.871300, '+21672431210', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000002', 'Pharmacie Habib Bourguiba',      '34 Avenue Habib Bourguiba',                     'Bizerte',              'Bizerte', 37.274600, 9.873700, '+21672431455', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000003', 'Pharmacie de la Corniche',       'Route de la Corniche, face au Jardin Public',   'Bizerte',              'Bizerte', 37.283500, 9.864100, '+21672432880', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000004', 'Pharmacie El Andalous',          '8 Rue d''Espagne',                              'Bizerte',              'Bizerte', 37.276100, 9.872200, '+21672433117', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000005', 'Pharmacie Ben Ammar',            '21 Avenue d''Algérie',                          'Bizerte',              'Bizerte', 37.273800, 9.870900, '+21672434502', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000006', 'Pharmacie Bab Mateur',           'Avenue Taieb Mhiri, Bab Mateur',                'Bizerte',              'Bizerte', 37.272200, 9.861700, '+21672435940', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000007', 'Pharmacie Ennour',               'Cité Bougatfa 2, Rue de l''Environnement',      'Bizerte',              'Bizerte', 37.266500, 9.860400, '+21672436773', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000008', 'Pharmacie Ibn Khaldoun',         '5 Rue Ibn Khaldoun, Centre-ville',              'Bizerte',              'Bizerte', 37.275400, 9.868800, '+21672437264', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000009', 'Pharmacie Zarzouna Centre',      'Avenue de la République, Zarzouna',             'Zarzouna',             'Bizerte', 37.254700, 9.876800, '+21672590214', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000010', 'Pharmacie Sidi Salem',           'Route de Sidi Salem, Zarzouna',                 'Zarzouna',             'Bizerte', 37.258800, 9.898100, '+21672591386', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000011', 'Pharmacie Sidi Ahmed',           'Avenue de l''Indépendance, Sidi Ahmed',         'Bizerte',              'Bizerte', 37.250400, 9.833400, '+21672592470', false, 'bizerte', 'demo'),
+  ('00000000-0000-4000-8000-000000000012', 'Pharmacie Menzel Jemil',         'Avenue Habib Bourguiba, Menzel Jemil',          'Menzel Jemil',         'Bizerte', 37.237100, 9.914500, '+21672491638', false, 'bizerte', 'demo')
 on conflict (id) do update set
   name        = excluded.name,
   address     = excluded.address,
@@ -28,7 +32,9 @@ on conflict (id) do update set
   lat         = excluded.lat,
   lng         = excluded.lng,
   phone       = excluded.phone,
-  verified    = excluded.verified;
+  governorate_slug = excluded.governorate_slug,
+  source      = excluded.source;
+-- verified is derived from pharmacist_accounts (trigger) — never seeded.
 
 -- ---------------------------------------------------------------------
 -- Step 3 — tracked medications.
@@ -45,32 +51,32 @@ on conflict (id) do update set
 insert into public.medications
   (id, slug, name, generic_name, form, category, aliases)
 values
-  ('10000000-0000-4000-8000-000000000001', 'levothyrox-50',       'Levothyrox 50 µg',              'Lévothyroxine sodique',            'Comprimé sécable, boîte de 30',                          'thyroid',     array['levotyrox','levothirox','levo thyrox','l-thyroxine','euthyrox 50','levothyroxine']),
-  ('10000000-0000-4000-8000-000000000002', 'levothyrox-100',      'Levothyrox 100 µg',             'Lévothyroxine sodique',            'Comprimé sécable, boîte de 30',                          'thyroid',     array['levotyrox 100','levothirox 100','l-thyroxine 100','levothyroxine 100']),
-  ('10000000-0000-4000-8000-000000000003', 'euthyral',            'Euthyral',                      'Lévothyroxine + liothyronine',     'Comprimé sécable, boîte de 30',                          'thyroid',     array['euthyrale','eutiral','euthyral t3 t4']),
-  ('10000000-0000-4000-8000-000000000004', 'neo-mercazole-5',     'Néo-Mercazole 5 mg',            'Carbimazole',                      'Comprimé, boîte de 100',                                 'thyroid',     array['neomercazole','neo mercazol','mercazole','carbimazol']),
-  ('10000000-0000-4000-8000-000000000005', 'lantus-solostar',     'Lantus SoloStar 100 UI/mL',     'Insuline glargine',                'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['lantous','lantus solo star','glargine','lantis']),
-  ('10000000-0000-4000-8000-000000000006', 'novorapid-flexpen',   'NovoRapid FlexPen 100 UI/mL',   'Insuline asparte',                 'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['novo rapid','novorapide','nova rapid','asparte']),
-  ('10000000-0000-4000-8000-000000000007', 'humalog-kwikpen',     'Humalog KwikPen 100 UI/mL',     'Insuline lispro',                  'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['humalogue','humalog kwik pen','lispro']),
-  ('10000000-0000-4000-8000-000000000008', 'insulatard-penfill',  'Insulatard Penfill 100 UI/mL',  'Insuline humaine isophane (NPH)',  'Cartouche 3 mL, boîte de 5',                             'insulin',     array['insulatarde','insulatard nph','insulatar']),
-  ('10000000-0000-4000-8000-000000000009', 'actrapid-penfill',    'Actrapid Penfill 100 UI/mL',    'Insuline humaine rapide',          'Cartouche 3 mL, boîte de 5',                             'insulin',     array['actrapide','actrapid hm','actrapid']),
-  ('10000000-0000-4000-8000-000000000010', 'mixtard-30-penfill',  'Mixtard 30 Penfill 100 UI/mL',  'Insuline humaine biphasique 30/70','Cartouche 3 mL, boîte de 5',                             'insulin',     array['mixtard 30 70','mixtar','mixtard hm']),
-  ('10000000-0000-4000-8000-000000000011', 'levemir-flexpen',     'Levemir FlexPen 100 UI/mL',     'Insuline détémir',                 'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['levemire','detemir','levimir']),
-  ('10000000-0000-4000-8000-000000000012', 'zoloft-50',           'Zoloft 50 mg',                  'Sertraline',                       'Comprimé pelliculé, boîte de 28',                        'psychiatric', array['zolof','sertralin','sertraline 50','zoloft 50mg']),
-  ('10000000-0000-4000-8000-000000000013', 'seroplex-10',         'Seroplex 10 mg',                'Escitalopram',                     'Comprimé pelliculé, boîte de 28',                        'psychiatric', array['seroplexe','ceroplex','escitalopram 10','cipralex']),
-  ('10000000-0000-4000-8000-000000000014', 'prozac-20',           'Prozac 20 mg',                  'Fluoxétine',                       'Gélule, boîte de 28',                                    'psychiatric', array['prosac','fluoxetine','fluoxetine 20','prozac 20mg']),
-  ('10000000-0000-4000-8000-000000000015', 'risperdal-2',         'Risperdal 2 mg',                'Rispéridone',                      'Comprimé pelliculé, boîte de 20',                        'psychiatric', array['risperidone','rispéridal','risperdale','risperdal 2mg']),
-  ('10000000-0000-4000-8000-000000000016', 'zyprexa-10',          'Zyprexa 10 mg',                 'Olanzapine',                       'Comprimé pelliculé, boîte de 28',                        'psychiatric', array['ziprexa','olanzapine 10','zyprexa 10mg']),
-  ('10000000-0000-4000-8000-000000000017', 'haldol-5',            'Haldol 5 mg',                   'Halopéridol',                      'Comprimé, boîte de 30',                                  'psychiatric', array['aldol','haloperidol','haldole','haloperidol 5']),
-  ('10000000-0000-4000-8000-000000000018', 'depakine-chrono-500', 'Dépakine Chrono 500 mg',        'Valproate de sodium',              'Comprimé à libération prolongée, boîte de 30',           'psychiatric', array['depakine','depakine chrono','valproate','depakin']),
-  ('10000000-0000-4000-8000-000000000019', 'teralithe-400',       'Téralithe 400 mg LP',           'Carbonate de lithium',             'Comprimé à libération prolongée, boîte de 30',           'psychiatric', array['teralite','lithium','teralithe lp','carbonate de lithium']),
-  ('10000000-0000-4000-8000-000000000020', 'rivotril-2',          'Rivotril 2 mg',                 'Clonazépam',                       'Comprimé sécable, boîte de 30',                          'psychiatric', array['rivotrile','clonazepam','rivotril 2mg']),
-  ('10000000-0000-4000-8000-000000000021', 'skenan-lp-30',        'Skenan LP 30 mg',               'Sulfate de morphine',              'Gélule à libération prolongée, boîte de 14',             'cancer_pain', array['skenane','morphine lp','sulfate de morphine','skenan 30']),
-  ('10000000-0000-4000-8000-000000000022', 'actiskenan-10',       'Actiskenan 10 mg',              'Sulfate de morphine',              'Gélule à libération immédiate, boîte de 14',             'cancer_pain', array['actiskenane','morphine rapide','acti skenan']),
-  ('10000000-0000-4000-8000-000000000023', 'durogesic-25',        'Durogésic 25 µg/h',             'Fentanyl transdermique',           'Dispositif transdermique, boîte de 5',                   'cancer_pain', array['durogesic','fentanyl','patch fentanyl','durogesique']),
-  ('10000000-0000-4000-8000-000000000024', 'oxycontin-lp-10',     'OxyContin LP 10 mg',            'Oxycodone',                        'Comprimé à libération prolongée, boîte de 28',           'cancer_pain', array['oxycontine','oxycodone','oxy contin']),
-  ('10000000-0000-4000-8000-000000000025', 'topalgic-lp-100',     'Topalgic LP 100 mg',            'Tramadol',                         'Comprimé à libération prolongée, boîte de 30',           'cancer_pain', array['topalgique','tramadol','contramal','topalgic 100']),
-  ('10000000-0000-4000-8000-000000000026', 'dafalgan-codeine',    'Dafalgan Codéiné',              'Paracétamol + codéine',            'Comprimé effervescent, boîte de 16',                     'cancer_pain', array['dafalgan codeine','codeine','co-dafalgan','dafalgan codéine'])
+  ('10000000-0000-4000-8000-000000000001', 'levothyrox-50',       'Levothyrox 50 µg',              'Lévothyroxine sodique',            'Comprimé sécable, boîte de 30',                          'thyroid',     array['levotyrox','levothirox','levo thyrox','l-thyroxine','euthyrox 50','levothyroxine','ليفوتيروكس','ليفوتيروكس 50','ليفوثيروكس','ليفوثيروكسين','levotiroks']),
+  ('10000000-0000-4000-8000-000000000002', 'levothyrox-100',      'Levothyrox 100 µg',             'Lévothyroxine sodique',            'Comprimé sécable, boîte de 30',                          'thyroid',     array['levotyrox 100','levothirox 100','l-thyroxine 100','levothyroxine 100','ليفوتيروكس 100','ليفوثيروكس 100','ليفوثيروكسين 100','levotiroks 100']),
+  ('10000000-0000-4000-8000-000000000003', 'euthyral',            'Euthyral',                      'Lévothyroxine + liothyronine',     'Comprimé sécable, boîte de 30',                          'thyroid',     array['euthyrale','eutiral','euthyral t3 t4','أوتيرال','اوتيرال','يوتيرال']),
+  ('10000000-0000-4000-8000-000000000004', 'neo-mercazole-5',     'Néo-Mercazole 5 mg',            'Carbimazole',                      'Comprimé, boîte de 100',                                 'thyroid',     array['neomercazole','neo mercazol','mercazole','carbimazol','نيو ميركازول','ميركازول','كاربيمازول']),
+  ('10000000-0000-4000-8000-000000000005', 'lantus-solostar',     'Lantus SoloStar 100 UI/mL',     'Insuline glargine',                'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['lantous','lantus solo star','glargine','lantis','لانتوس','لونتوس','انسولين لانتوس','غلارجين','insoline lantus']),
+  ('10000000-0000-4000-8000-000000000006', 'novorapid-flexpen',   'NovoRapid FlexPen 100 UI/mL',   'Insuline asparte',                 'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['novo rapid','novorapide','nova rapid','asparte','نوفورابيد','نوفو رابيد','انسولين نوفورابيد','insoline novorapid']),
+  ('10000000-0000-4000-8000-000000000007', 'humalog-kwikpen',     'Humalog KwikPen 100 UI/mL',     'Insuline lispro',                  'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['humalogue','humalog kwik pen','lispro','هيومالوج','هومالوغ','هيومالوغ','انسولين هيومالوج']),
+  ('10000000-0000-4000-8000-000000000008', 'insulatard-penfill',  'Insulatard Penfill 100 UI/mL',  'Insuline humaine isophane (NPH)',  'Cartouche 3 mL, boîte de 5',                             'insulin',     array['insulatarde','insulatard nph','insulatar','انسولاتار','إنسولاتار','انسولين انسولاتار','insoulatar']),
+  ('10000000-0000-4000-8000-000000000009', 'actrapid-penfill',    'Actrapid Penfill 100 UI/mL',    'Insuline humaine rapide',          'Cartouche 3 mL, boîte de 5',                             'insulin',     array['actrapide','actrapid hm','actrapid','اكترابيد','أكترابيد','انسولين اكترابيد','aktrapid']),
+  ('10000000-0000-4000-8000-000000000010', 'mixtard-30-penfill',  'Mixtard 30 Penfill 100 UI/mL',  'Insuline humaine biphasique 30/70','Cartouche 3 mL, boîte de 5',                             'insulin',     array['mixtard 30 70','mixtar','mixtard hm','ميكستار','مكستار','ميكستارد','انسولين ميكستار']),
+  ('10000000-0000-4000-8000-000000000011', 'levemir-flexpen',     'Levemir FlexPen 100 UI/mL',     'Insuline détémir',                 'Stylo prérempli 3 mL, boîte de 5',                       'insulin',     array['levemire','detemir','levimir','ليفمير','ليفيمير','انسولين ليفمير']),
+  ('10000000-0000-4000-8000-000000000012', 'zoloft-50',           'Zoloft 50 mg',                  'Sertraline',                       'Comprimé pelliculé, boîte de 28',                        'psychiatric', array['zolof','sertralin','sertraline 50','zoloft 50mg','زولوفت','سيرترالين']),
+  ('10000000-0000-4000-8000-000000000013', 'seroplex-10',         'Seroplex 10 mg',                'Escitalopram',                     'Comprimé pelliculé, boîte de 28',                        'psychiatric', array['seroplexe','ceroplex','escitalopram 10','cipralex','سيروبلكس','سيروبلاكس','اسيتالوبرام']),
+  ('10000000-0000-4000-8000-000000000014', 'prozac-20',           'Prozac 20 mg',                  'Fluoxétine',                       'Gélule, boîte de 28',                                    'psychiatric', array['prosac','fluoxetine','fluoxetine 20','prozac 20mg','بروزاك','فلوكسيتين']),
+  ('10000000-0000-4000-8000-000000000015', 'risperdal-2',         'Risperdal 2 mg',                'Rispéridone',                      'Comprimé pelliculé, boîte de 20',                        'psychiatric', array['risperidone','rispéridal','risperdale','risperdal 2mg','ريسبيردال','ريسبيريدون']),
+  ('10000000-0000-4000-8000-000000000016', 'zyprexa-10',          'Zyprexa 10 mg',                 'Olanzapine',                       'Comprimé pelliculé, boîte de 28',                        'psychiatric', array['ziprexa','olanzapine 10','zyprexa 10mg','زيبريكسا','أولانزابين','اولانزابين']),
+  ('10000000-0000-4000-8000-000000000017', 'haldol-5',            'Haldol 5 mg',                   'Halopéridol',                      'Comprimé, boîte de 30',                                  'psychiatric', array['aldol','haloperidol','haldole','haloperidol 5','هالدول','هالوبيريدول']),
+  ('10000000-0000-4000-8000-000000000018', 'depakine-chrono-500', 'Dépakine Chrono 500 mg',        'Valproate de sodium',              'Comprimé à libération prolongée, boîte de 30',           'psychiatric', array['depakine','depakine chrono','valproate','depakin','ديباكين','ديباكين كرونو','فالبروات']),
+  ('10000000-0000-4000-8000-000000000019', 'teralithe-400',       'Téralithe 400 mg LP',           'Carbonate de lithium',             'Comprimé à libération prolongée, boîte de 30',           'psychiatric', array['teralite','lithium','teralithe lp','carbonate de lithium','تيراليت','تيراليث','ليثيوم']),
+  ('10000000-0000-4000-8000-000000000020', 'rivotril-2',          'Rivotril 2 mg',                 'Clonazépam',                       'Comprimé sécable, boîte de 30',                          'psychiatric', array['rivotrile','clonazepam','rivotril 2mg','ريفوتريل','كلونازيبام']),
+  ('10000000-0000-4000-8000-000000000021', 'skenan-lp-30',        'Skenan LP 30 mg',               'Sulfate de morphine',              'Gélule à libération prolongée, boîte de 14',             'cancer_pain', array['skenane','morphine lp','sulfate de morphine','skenan 30','سكينان','سكنان','مورفين']),
+  ('10000000-0000-4000-8000-000000000022', 'actiskenan-10',       'Actiskenan 10 mg',              'Sulfate de morphine',              'Gélule à libération immédiate, boîte de 14',             'cancer_pain', array['actiskenane','morphine rapide','acti skenan','اكتيسكينان','أكتيسكينان','مورفين سريع']),
+  ('10000000-0000-4000-8000-000000000023', 'durogesic-25',        'Durogésic 25 µg/h',             'Fentanyl transdermique',           'Dispositif transdermique, boîte de 5',                   'cancer_pain', array['durogesic','fentanyl','patch fentanyl','durogesique','دوروجيزيك','دوروجيسيك','فنتانيل']),
+  ('10000000-0000-4000-8000-000000000024', 'oxycontin-lp-10',     'OxyContin LP 10 mg',            'Oxycodone',                        'Comprimé à libération prolongée, boîte de 28',           'cancer_pain', array['oxycontine','oxycodone','oxy contin','اوكسيكونتين','أوكسيكونتين','اوكسيكودون']),
+  ('10000000-0000-4000-8000-000000000025', 'topalgic-lp-100',     'Topalgic LP 100 mg',            'Tramadol',                         'Comprimé à libération prolongée, boîte de 30',           'cancer_pain', array['topalgique','tramadol','contramal','topalgic 100','توبالجيك','توبالجيك 100','ترامادول']),
+  ('10000000-0000-4000-8000-000000000026', 'dafalgan-codeine',    'Dafalgan Codéiné',              'Paracétamol + codéine',            'Comprimé effervescent, boîte de 16',                     'cancer_pain', array['dafalgan codeine','codeine','co-dafalgan','dafalgan codéine','دافالغان كوديين','دافلقان كوديين','دفلقان','دافالغان'])
 on conflict (id) do update set
   slug         = excluded.slug,
   name         = excluded.name,

@@ -12,6 +12,8 @@ type MapViewProps = {
   selectedId: string | null;
   isVisible: boolean;
   ariaLabel: string;
+  center?: [number, number];
+  userPosition?: { lat: number; lng: number } | null;
 };
 
 function MapPlaceholder() {

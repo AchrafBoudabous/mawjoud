@@ -1,5 +1,6 @@
 import type { IconName } from "@/components/ui/Icon";
 import { Icon } from "@/components/ui/Icon";
+import { cn } from "@/lib/utils";
 
 type EmptyStateProps = {
   icon: IconName;
@@ -14,12 +15,9 @@ type EmptyStateProps = {
   role?: "status" | "alert";
 };
 
-/** A 44px brand-tinted circle with a monochrome line glyph, a title, one
- *  muted line of body copy and at most one action — never a scene, a
- *  character or colour outside the palette. Error tones use `warn-*` and
- *  `role="alert"`; emptiness uses `brand-*` and `role="status"`, so a
- *  failure and an emptiness are never confused at a glance.
- *  See docs/ARCHITECTURE.md 8.9. */
+/** A tinted glyph tile, a title, one muted line and at most one action.
+ *  Error tones use `warn-*` and `role="alert"`; emptiness uses `brand-*`
+ *  and `role="status"`, so a failure and an emptiness are never confused. */
 export function EmptyState({
   icon,
   title,
@@ -34,18 +32,21 @@ export function EmptyState({
   return (
     <div
       role={role}
-      className="flex flex-col items-center gap-3 rounded-card border border-line bg-surface px-5 py-10 text-center shadow-card"
+      className="flex flex-col items-center gap-3 rounded-panel border border-dashed border-line-strong bg-surface px-6 py-12 text-center animate-fade-in"
     >
       <span
-        className={`flex size-11 shrink-0 items-center justify-center rounded-full ${
-          tone === "warn" ? "bg-warn-bg text-warn-text" : "bg-brand-50 text-brand-600"
-        }`}
+        className={cn(
+          "flex size-14 shrink-0 items-center justify-center rounded-card ring-8",
+          tone === "warn"
+            ? "bg-warn-bg text-warn-text ring-warn-bg/40"
+            : "bg-brand-50 text-brand-600 ring-brand-50/40"
+        )}
       >
-        <Icon name={icon} className="size-5" />
+        <Icon name={icon} className="size-6" />
       </span>
-      <Heading className="text-base font-semibold text-ink">{title}</Heading>
+      <Heading className="mt-2 text-lg font-bold text-ink">{title}</Heading>
       {body && <p className="max-w-[48ch] text-sm text-muted">{body}</p>}
-      {action && <div className="mt-1">{action}</div>}
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }

@@ -1,15 +1,24 @@
+import { CallScriptButton } from "@/components/CallScriptButton";
+import { ConfidenceLine } from "@/components/ConfidenceLine";
+import { DutyBadge } from "@/components/DutyBadge";
 import type { ReportUiState } from "@/components/StockReportButtons";
 import { REPORT_UI_IDLE, StockReportButtons } from "@/components/StockReportButtons";
 import { StockReportTime } from "@/components/StockReportTime";
 import { StockStatusBadge } from "@/components/StockStatusBadge";
+import { Icon } from "@/components/ui/Icon";
 import { PhoneLink } from "@/components/ui/PhoneLink";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import type { PatientReportStatus, PharmacyStock } from "@/lib/api";
+import type { Medication, PatientReportStatus, PharmacyStock } from "@/lib/api";
+import { formatDistance } from "@/lib/geo";
 import { getDictionary } from "@/lib/i18n";
-import { BUTTON_BASE, BUTTON_SECONDARY, CARD_INTERACTIVE } from "@/lib/ui";
+import { STOCK_STYLES } from "@/lib/stock";
+import { BUTTON_BASE } from "@/lib/ui";
+import { cn } from "@/lib/utils";
 
 type StockPharmacyListItemProps = {
   pharmacy: PharmacyStock;
+  medication: Medication;
+  distanceKm: number | null;
   isSelected: boolean;
   onSelect: (id: string) => void;
   reportState: ReportUiState | undefined;
@@ -19,6 +28,8 @@ type StockPharmacyListItemProps = {
 
 export function StockPharmacyListItem({
   pharmacy,
+  medication,
+  distanceKm,
   isSelected,
   onSelect,
   reportState,
@@ -29,42 +40,77 @@ export function StockPharmacyListItem({
 
   return (
     <li
-      onClick={() => onSelect(pharmacy.id)}
-      className={`cursor-pointer p-4 ${CARD_INTERACTIVE} ${
-        isSelected ? "border-brand-600 ring-1 ring-brand-600" : ""
-      }`}
+      className={cn(
+        "relative overflow-hidden rounded-card border bg-surface p-4 pl-5 shadow-card transition-[border-color,box-shadow] duration-200 ease-standard hover:shadow-raised",
+        isSelected ? "border-brand-500 ring-2 ring-brand-500/25" : "border-line"
+      )}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-        <h3 className="font-semibold text-ink">{pharmacy.name}</h3>
-        <div className="self-start">
-          <StockStatusBadge status={pharmacy.status} />
+      {/* Status accent stripe — decorative; the badge carries the meaning. */}
+      <span
+        aria-hidden="true"
+        className={cn("absolute inset-y-0 left-0 w-1.5", STOCK_STYLES[pharmacy.status].accent)}
+      />
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 dir="auto" className="text-base font-bold text-ink">{pharmacy.name}</h3>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {pharmacy.verified && <VerifiedBadge />}
+            <DutyBadge onDutyUntil={pharmacy.on_duty_until} is24h={pharmacy.is_24h} />
+            {distanceKm !== null && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink-soft tabular-nums">
+                <Icon name="map-pin" className="size-3" />
+                {dict.nearby.distanceAway(formatDistance(distanceKm))}
+              </span>
+            )}
+          </div>
         </div>
+        <StockStatusBadge status={pharmacy.status} />
       </div>
-      {pharmacy.verified && (
-        <div className="mt-1">
-          <VerifiedBadge />
-        </div>
-      )}
+
       {pharmacy.status !== "none" && pharmacy.reported_at && (
-        <StockReportTime iso={pharmacy.reported_at} source={pharmacy.reported_by} />
+        <div className="mt-2 flex flex-col gap-1">
+          <StockReportTime iso={pharmacy.reported_at} source={pharmacy.reported_by} />
+          <ConfidenceLine pharmacy={pharmacy} />
+        </div>
       )}
-      <p className="mt-2 text-sm text-muted">{pharmacy.address}</p>
-      {pharmacy.city !== "Bizerte" && (
-        <p className="text-sm text-muted">{pharmacy.city}</p>
-      )}
-      <div className="mt-2">
-        <PhoneLink phone={pharmacy.phone} />
+
+      <p className="mt-2 flex items-start gap-1.5 text-sm text-muted">
+        <Icon name="map-pin" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          {pharmacy.address}
+          {pharmacy.city && pharmacy.city !== pharmacy.address && !pharmacy.address.includes(pharmacy.city) && (
+            <> · {pharmacy.city}</>
+          )}
+        </span>
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <PhoneLink phone={pharmacy.phone} variant="button" />
+        <CallScriptButton
+          medicationName={medication.name}
+          genericName={medication.generic_name}
+          form={medication.form}
+          pharmacyName={pharmacy.name}
+          phone={pharmacy.phone}
+        />
+        <button
+          type="button"
+          onClick={() => onSelect(pharmacy.id)}
+          aria-pressed={isSelected}
+          className={cn(
+            BUTTON_BASE,
+            "min-h-10 px-3",
+            isSelected
+              ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200"
+              : "text-ink-soft hover:bg-surface-2 hover:text-ink"
+          )}
+        >
+          <Icon name="map" />
+          {dict.pharmacies.showOnMap}
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(pharmacy.id);
-        }}
-        className={`mt-3 ${BUTTON_BASE} ${BUTTON_SECONDARY} md:hidden`}
-      >
-        {dict.pharmacies.showOnMap}
-      </button>
+
       <StockReportButtons
         pharmacyId={pharmacy.id}
         pharmacyName={pharmacy.name}

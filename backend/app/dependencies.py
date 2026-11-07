@@ -24,6 +24,12 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 
 _ACCOUNT_COLUMNS = "id,pharmacy_id,email,status,auth_user_id"
 
+# One pooled client for every token verification: a fresh httpx.get()
+# per request paid a full TCP + TLS handshake to Supabase on every
+# dashboard load and every stock toggle. httpx.Client is thread-safe, and
+# sync FastAPI dependencies run on the threadpool.
+_auth_http = httpx.Client(timeout=10.0)
+
 
 class PharmacistIdentity(BaseModel):
     account_id: UUID
@@ -51,15 +57,14 @@ def _verify_supabase_token(token: str) -> dict:
     pharmacist to sign in again during a Supabase outage, and they would
     fail again.
     """
-    url = f"{settings.supabase_url.rstrip('/')}/auth/v1/user"
+    url = f"{settings.supabase_url}/auth/v1/user"
     try:
-        response = httpx.get(
+        response = _auth_http.get(
             url,
             headers={
                 "apikey": settings.supabase_anon_key,
                 "Authorization": f"Bearer {token}",
             },
-            timeout=10.0,
         )
     except httpx.HTTPError:
         # Never log the token itself, not even truncated.
@@ -198,6 +203,55 @@ def get_current_pharmacist(
         status=account_row["status"],
         auth_user_id=user_id,
     )
+
+
+class AdminIdentity(BaseModel):
+    admin_id: UUID
+    email: str
+    auth_user_id: UUID
+
+
+def get_current_admin(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> AdminIdentity:
+    """Same token verification as pharmacists, then membership of
+    public.admin_users, re-read on EVERY request so removing a row revokes
+    access immediately. First sign-in binds auth_user_id by verified
+    e-mail, exactly like pharmacist accounts."""
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="authentication required")
+
+    user = _verify_supabase_token(credentials.credentials)
+    user_id = user.get("id")
+    email = (user.get("email") or "").strip().lower()
+    if not user_id or not email or not user.get("email_confirmed_at"):
+        raise HTTPException(status_code=401, detail="email address not confirmed")
+
+    supabase = get_supabase()
+    try:
+        rows = (
+            supabase.table("admin_users").select("id,email,auth_user_id")
+            .eq("auth_user_id", user_id).limit(1).execute()
+        ).data
+        if not rows:
+            rows = (
+                supabase.table("admin_users").select("id,email,auth_user_id")
+                .eq("email", email).limit(1).execute()
+            ).data
+            if rows and rows[0].get("auth_user_id") is None:
+                supabase.table("admin_users").update({"auth_user_id": user_id}).eq(
+                    "id", rows[0]["id"]
+                ).is_("auth_user_id", None).execute()
+            elif rows and rows[0].get("auth_user_id") != user_id:
+                rows = []
+    except Exception:
+        logger.exception("failed to resolve admin identity")
+        raise HTTPException(status_code=503, detail="admin temporarily unavailable")
+
+    if not rows:
+        raise HTTPException(status_code=403, detail="admin access required")
+
+    return AdminIdentity(admin_id=rows[0]["id"], email=rows[0]["email"], auth_user_id=user_id)
 
 
 def require_active_pharmacist(

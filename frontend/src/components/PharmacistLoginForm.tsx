@@ -4,26 +4,41 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MagicLinkPrompt } from "@/components/MagicLinkPrompt";
-import { getAccessToken, sendMagicLink } from "@/lib/supabase/auth";
+import { getAccessToken, sendMagicLink, type AfterLoginPath } from "@/lib/supabase/auth";
 import { getDictionary } from "@/lib/i18n";
-import { BUTTON_BASE, BUTTON_PRIMARY, FIELD } from "@/lib/ui";
+import { BUTTON_BASE, BUTTON_PRIMARY, BUTTON_QUIET, FIELD } from "@/lib/ui";
 
 type Phase = "idle" | "sending" | "sent";
-type LoginError = "rate_limited" | null;
+/** Supabase has two limits: a short per-address wait ("you can only
+ *  request this after N seconds") and an hourly cap on e-mails for the
+ *  whole project ("email rate limit exceeded"). */
+type LoginError = { kind: "wait"; seconds: number } | { kind: "hourly" } | null;
 
-function isRateLimited(error: unknown): boolean {
-  if (error && typeof error === "object") {
-    const status = (error as { status?: unknown }).status;
-    if (status === 429) return true;
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.toLowerCase().includes("rate limit")) {
-      return true;
-    }
-  }
-  return false;
+function classifyRateLimit(error: unknown): LoginError {
+  if (!error || typeof error !== "object") return null;
+  const status = (error as { status?: unknown }).status;
+  const message = String((error as { message?: unknown }).message ?? "");
+  const code = String((error as { code?: unknown }).code ?? "");
+  const wait = message.match(/after (\d+) seconds?/i);
+  if (wait) return { kind: "wait", seconds: Number(wait[1]) };
+  if (status === 429 || /rate limit/i.test(message) || code.startsWith("over_")) return { kind: "hourly" };
+  return null;
 }
 
-export function PharmacistLoginForm() {
+type PharmacistLoginFormProps = {
+  /** Reused by /admin: same e-mail link/code, different destination. */
+  redirectTo?: AfterLoginPath;
+  title?: string;
+  intro?: string;
+  showRegisterLink?: boolean;
+};
+
+export function PharmacistLoginForm({
+  redirectTo = "/pharmacien",
+  title,
+  intro,
+  showRegisterLink = true,
+}: PharmacistLoginFormProps = {}) {
   const dict = getDictionary();
   const router = useRouter();
 
@@ -31,17 +46,33 @@ export function PharmacistLoginForm() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<LoginError>(null);
 
+  // Count the short wait down so the button re-enables by itself.
+  useEffect(() => {
+    if (error?.kind !== "wait" || error.seconds <= 0) return;
+    const id = setTimeout(
+      () => setError((e) => (e?.kind === "wait" ? (e.seconds <= 1 ? null : { kind: "wait", seconds: e.seconds - 1 }) : e)),
+      1000
+    );
+    return () => clearTimeout(id);
+  }, [error]);
+
   useEffect(() => {
     let cancelled = false;
-    getAccessToken().then((token) => {
-      if (!cancelled && token) {
-        router.replace("/pharmacien");
-      }
-    });
+    getAccessToken()
+      .then((token) => {
+        if (!cancelled && token) {
+          router.replace(redirectTo);
+        }
+      })
+      .catch((err: unknown) => {
+        // e.g. misconfigured NEXT_PUBLIC_SUPABASE_* — the form still
+        // renders; submitting surfaces the problem in the console.
+        console.error("Could not read the pharmacist session:", err);
+      });
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, redirectTo]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,11 +81,13 @@ export function PharmacistLoginForm() {
     setError(null);
 
     try {
-      await sendMagicLink(email.trim(), { createUser: false });
+      await sendMagicLink(email.trim(), { createUser: false, next: redirectTo });
       setPhase("sent");
     } catch (err) {
-      if (isRateLimited(err)) {
-        setError("rate_limited");
+      const limited = classifyRateLimit(err);
+      if (limited) {
+        console.error("sendMagicLink rate-limited:", err);
+        setError(limited);
         setPhase("idle");
         return;
       }
@@ -66,14 +99,14 @@ export function PharmacistLoginForm() {
   }
 
   if (phase === "sent") {
-    return <MagicLinkPrompt email={email.trim()} />;
+    return <MagicLinkPrompt email={email.trim()} redirectTo={redirectTo} />;
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold text-ink">{dict.pharmacist.login.title}</h1>
-        <p className="mt-1 text-sm text-muted">{dict.pharmacist.login.intro}</p>
+        <h1 className="text-2xl font-extrabold text-ink md:text-3xl">{title ?? dict.pharmacist.login.title}</h1>
+        <p className="mt-1 text-sm text-muted">{intro ?? dict.pharmacist.login.intro}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -91,21 +124,34 @@ export function PharmacistLoginForm() {
           className={FIELD}
         />
 
-        {error === "rate_limited" && (
+        {error && (
           <p role="alert" className="text-sm text-stock-out">
-            {dict.pharmacist.login.rateLimited}
+            {error.kind === "wait"
+              ? dict.pharmacist.login.rateLimitedWait(error.seconds)
+              : dict.pharmacist.login.rateLimitedHourly}
           </p>
         )}
 
         <button
           type="submit"
-          disabled={phase === "sending"}
+          disabled={phase === "sending" || error?.kind === "wait"}
           className={`${BUTTON_BASE} ${BUTTON_PRIMARY} w-full sm:w-auto`}
         >
           {phase === "sending" ? dict.pharmacist.login.sending : dict.pharmacist.login.submit}
         </button>
+        {/* A code stays valid for an hour: no need to request another
+            e-mail (and spend the quota) to use one already received. */}
+        <button
+          type="button"
+          disabled={!email.trim()}
+          onClick={() => setPhase("sent")}
+          className={`${BUTTON_QUIET} self-start disabled:opacity-50`}
+        >
+          {dict.pharmacist.login.haveCode}
+        </button>
       </form>
 
+      {showRegisterLink && (
       <p className="text-sm text-muted">
         {dict.pharmacist.login.noAccount}{" "}
         <Link
@@ -115,6 +161,7 @@ export function PharmacistLoginForm() {
           {dict.pharmacist.login.registerLink}
         </Link>
       </p>
+      )}
     </div>
   );
 }

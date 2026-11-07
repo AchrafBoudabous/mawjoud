@@ -11,14 +11,17 @@ export const STOCK_STATUSES = [
 /**
  * Class strings must be written out literally — Tailwind v4 scans source
  * text and will not see a class name assembled at runtime.
- * `pin` mirrors the --color-stock-* foreground tokens in globals.css
- * because it goes into an SVG string, not a class. Keep the two in sync.
+ * `pin` is a hex because it goes into an SVG string, not a class; it
+ * mirrors the light-mode --stock-* tokens in globals.css. Keep in sync.
  */
-export const STOCK_STYLES: Record<StockStatusView, { badge: string; pin: string }> = {
-  in_stock: { badge: "bg-stock-in-bg text-stock-in", pin: "#15803d" },
-  out_of_stock: { badge: "bg-stock-out-bg text-stock-out", pin: "#b91c1c" },
-  unsure: { badge: "bg-stock-unsure-bg text-stock-unsure", pin: "#b45309" },
-  none: { badge: "bg-stock-none-bg text-stock-none", pin: "#4b5563" },
+export const STOCK_STYLES: Record<
+  StockStatusView,
+  { badge: string; accent: string; pin: string }
+> = {
+  in_stock: { badge: "bg-stock-in-bg text-stock-in", accent: "bg-stock-in", pin: "#0f6fb0" },
+  out_of_stock: { badge: "bg-stock-out-bg text-stock-out", accent: "bg-stock-out", pin: "#c4361f" },
+  unsure: { badge: "bg-stock-unsure-bg text-stock-unsure", accent: "bg-stock-unsure", pin: "#7c3aed" },
+  none: { badge: "bg-stock-none-bg text-stock-none", accent: "bg-line-strong", pin: "#64748b" },
 };
 
 /** A report older than this is flagged as stale in the UI. */

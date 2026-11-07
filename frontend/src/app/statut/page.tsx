@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { ApiStatus } from "@/components/ApiStatus";
 import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BackLink } from "@/components/ui/BackLink";
 import { getDictionary } from "@/lib/i18n";
 
@@ -18,11 +16,10 @@ export default function StatutPage() {
 
   return (
     <PageContainer>
-      <SiteHeader />
 
       <header>
         <BackLink href="/" label={dict.nav.home} />
-        <h1 className="mt-2 text-2xl font-semibold text-ink">{dict.apiStatus.title}</h1>
+        <h1 className="mt-2 text-2xl font-extrabold text-ink md:text-3xl">{dict.apiStatus.title}</h1>
         <p className="mt-1 text-base text-muted">{dict.apiStatus.subtitle}</p>
       </header>
 
@@ -30,7 +27,6 @@ export default function StatutPage() {
 
       <ApiStatus />
 
-      <SiteFooter />
     </PageContainer>
   );
 }

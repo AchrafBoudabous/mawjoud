@@ -35,7 +35,7 @@ export function StockToggle({
         role="group"
         aria-label={dict.pharmacist.toggle.ariaLabel(medicationName)}
         aria-busy={saving}
-        className="grid grid-cols-3 gap-2"
+        className="grid grid-cols-3 gap-1 rounded-control bg-surface-2 p-1 ring-1 ring-inset ring-line"
       >
         {TOGGLE_VALUES.map((value) => {
           const isSelected = current === value;
@@ -47,10 +47,10 @@ export function StockToggle({
               aria-pressed={isSelected}
               disabled={allDisabled}
               onClick={() => onSelect(value)}
-              className={`min-h-11 rounded-control border px-1.5 text-center text-sm font-medium leading-tight disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`pressable min-h-11 rounded-[0.6rem] px-1.5 text-center text-sm font-semibold leading-tight disabled:cursor-not-allowed disabled:opacity-55 ${
                 isSelected
-                  ? `ring-1 ring-current ${STOCK_STYLES[value].badge}`
-                  : "border-line bg-surface text-muted"
+                  ? `shadow-raised ring-1 ring-inset ring-current/25 ${STOCK_STYLES[value].badge}`
+                  : "text-muted hover:bg-surface hover:text-ink"
               }`}
             >
               {isPending ? (

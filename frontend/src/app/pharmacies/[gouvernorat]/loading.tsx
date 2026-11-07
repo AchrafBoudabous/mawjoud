@@ -1,8 +1,6 @@
 import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
 import { PharmacyCardSkeleton } from "@/components/skeletons/PharmacyCardSkeleton";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BackLink } from "@/components/ui/BackLink";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getDictionary } from "@/lib/i18n";
@@ -12,10 +10,9 @@ export default function Loading() {
 
   return (
     <PageContainer width="wide">
-      <SiteHeader />
 
       <header>
-        <BackLink href="/" label={dict.nav.home} />
+        <BackLink href="/pharmacies" label={dict.governorate.change} />
         <Skeleton className="mt-2 h-6 w-2/5" />
       </header>
 
@@ -34,7 +31,6 @@ export default function Loading() {
         {dict.pharmacies.loading}
       </p>
 
-      <SiteFooter />
     </PageContainer>
   );
 }
